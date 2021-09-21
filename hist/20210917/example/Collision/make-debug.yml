@@ -1,0 +1,60 @@
+TARGET: Collision
+
+DIST: Debug
+
+ENV:
+  GCC: F:/root/usr/bin/mingw64/x86_64-8.1.0-release-win32-seh-rt_v6-rev0
+  QT5: F:/root/usr/bin/Qt-5.9.0-mingw64
+
+QT:
+  - core
+  - widgets
+  - gui
+
+HEADERS:
+  QOBJECT:
+    - mainwidget.h
+    - lspecanvas.h
+  STANDARD:
+    - mycircle.h
+    - stable.h
+
+SOURCES:
+  - main.cpp
+  - mainwidget.cpp
+  - lspecanvas.cpp
+  - mycircle.cpp
+  - dummy.cpp
+
+FORMS:
+  - mainwidget.ui
+  - lspecanvas.ui
+
+DEFINES:
+  - QT_DEPRECATED_WARNINGS
+  - UNICODE
+  - QT_NEEDS_QMAIN
+
+INCLUDE:
+  HEADERS:
+    - ../../include
+  LIBS:
+    - ~
+
+LIBS:
+  - ~
+
+LINKS:
+  - ~
+
+CFLAGS:
+  - -w
+  - -fpermissive
+  - -Wno-class-memaccess
+
+LDFLAGS:
+  # - -Wl,-subsystem,windows
+  - ~
+
+DEPENDENCY:
+  - ~
