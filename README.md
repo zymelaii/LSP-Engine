@@ -27,8 +27,8 @@
 3. - [x] Convex Polygen
 4. - [x] Ellipse
 5. - [ ] Bézier Curve
-	1. - [ ] Quadratic Bézier Curve
-	2. - [ ] Cubic Bézier Curve
+	- * [ ] Quadratic Bézier Curve
+	- * [ ] Cubic Bézier Curve
 
 ***
 
@@ -41,21 +41,21 @@
 >> `NarrowPhase` 采用 `GJK` `EPA` `MPR` 算法进行相撞间的碰撞测试
 
 1. - [ ] BroadPhase
-	- 1. [x] Dynamic AABB Tree
-	- 2. [ ] Sweep and Prune
+	- * [x] Dynamic AABB Tree
+	- * [ ] Sweep and Prune
 2. - [ ] NarrowPhase
-	1. - [ ] Support Shapes
-		1. - [x] Line Segment
-		2. - [ ] Ray
-		3. - [ ] Straight Line 
-		3. - [x] Circle
-		4. - [x] Convex Polygen
-		5. - [x] Ellipse
-		6. - [ ] Quadratic Bézier Curve
-		7. - [ ] Cubic Bézier Curve
-	2. - [x] GJK
-	3. - [ ] EPA
-	4. - [ ] MPR
+	- * [ ] Support Shapes
+		- * [x] Line Segment
+		- * [ ] Ray
+		- * [ ] Straight Line 
+		- * [x] Circle
+		- * [x] Convex Polygen
+		- * [x] Ellipse
+		- * [ ] Quadratic Bézier Curve
+		- * [ ] Cubic Bézier Curve
+	- * [x] GJK
+	- * [ ] EPA
+	- * [ ] MPR
 
 ***
 
