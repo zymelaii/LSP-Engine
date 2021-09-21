@@ -22,7 +22,7 @@ test:
 	-cd test && make all
 
 .PHONY: clean
-clean:
+clean:  
 	-cd src && make clean
 	-cd example && make clean
 	-cd test && make clean
