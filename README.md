@@ -22,7 +22,7 @@
 
 * **Shape**
 
-1. - [x] Line  
+1. - [x] Line
 2. - [x] Circle
 3. - [x] Convex Polygen
 4. - [x] Ellipse
