@@ -30,3 +30,12 @@
 *.exe
 *.out
 *.app
+
+# LSP-Engine Build files
+*.obj
+*.dobj
+/build/*
+/example/abtree/Debug/*
+/example/abtree/Release/*
+/example/collisionTest/Debug/*
+/example/collisionTest/Release/*

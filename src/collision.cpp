@@ -122,7 +122,9 @@ vec2 supportBezier3(Shape x, const vec2 &direction)
 using namespace collision;
 
 Collider::Collider()
-	: flag(0), tested(false), iscollided(false)
+	: expandedSimplex(3),
+	tested(false), iscollided(false),
+	flag(0)
 {
 	shapes[0] = nullptr;
 	shapes[1] = nullptr;
@@ -131,6 +133,8 @@ Collider::Collider()
 
 	support[0] = nullptr;
 	support[1] = nullptr;
+
+	extra = nullptr;
 }
 
 /********************************
@@ -206,14 +210,18 @@ bool Collider::collided()
 	return false;
 }
 
-Arbiter Collider::getArbiter() const
+vec2 Collider::computePenetration()
 {
 	LSPE_ASSERT(flag == 0x1f);
 	LSPE_ASSERT(tested);
 
-	// Arbiter(simplex);
+	expandedSimplex[0] = simplex[0];
+	expandedSimplex[1] = simplex[1];
+	expandedSimplex[2] = simplex[2];
 
-	return Arbiter();
+	
+
+	return { 0, 0 };
 }
 
 void Collider::setTestPair(Shape a, Shape b)
@@ -264,6 +272,8 @@ void Collider::reset()
 {
 	tested = false;
 	iscollided = false;
+
+	expandedSimplex.clear();
 }
 
 bool processSimplex2(vec2 &direction, vec2 *simplex)

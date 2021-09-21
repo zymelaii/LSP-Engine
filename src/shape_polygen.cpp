@@ -76,16 +76,18 @@ bool contain(const Polygen &a, const vec2 &b)
 {
 	LSPE_ASSERT(a.vertices.size() >= 3);
 
-	vec2 ip1 = -a.vertices[0];
-	vec2 v = b + ip1;
+	vec2 p = a.vertices[0];
+
+	vec2 ao = -p;
+	vec2 v = b + ao;
 
 	for (int i = 2; i < a.vertices.size(); ++i)
 	{
-		vec2 v1 = ip1 + a.vertices[i - 1];
-		vec2 v2 = ip1 + a.vertices[i];
+		vec2 v1 = ao + a.vertices[i - 1];
+		vec2 v2 = ao + a.vertices[i];
 
 		vec2 perp1 = triproduct(v2, v1, v1);
-		vec2 p2 = triproduct(v1, v2, v2);
+		vec2 perp2 = triproduct(v1, v2, v2);
 
 		if (dot(v, perp1) <= FLT_EPSILON
 			&& dot(v, perp2) <= FLT_EPSILON)
