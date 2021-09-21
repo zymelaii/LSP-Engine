@@ -34,6 +34,6 @@
 # LSP-Engine Build files
 *.obj
 *.dobj
-/build
-/example/abtree/*/
-/example/collisionTest/*/
+build
+example/abtree/*/
+example/collisionTest/*/
