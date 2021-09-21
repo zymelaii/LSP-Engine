@@ -1,12 +1,9 @@
 #include "lspecanvas.h"
 #include "ui_lspecanvas.h"
 
-struct myQueryExtra { int last[2]; Object *obj; void *userdata; };
-myQueryExtra extra = { { -1, -1 }, nullptr, nullptr };
-
 LspeCanvas::LspeCanvas(QWidget *parent) :
     QWidget(parent), ui(new Ui::LspeCanvas),
-    man(nullptr), initialized(false)
+    man(nullptr), shouldDrawBBox(false), initialized(false)
 {
     ui->setupUi(this);
 
@@ -54,6 +51,11 @@ void LspeCanvas::render()
 	update();
 }
 
+void LspeCanvas::updateShouldDrawBBox(int status)
+{
+	shouldDrawBBox = status;
+}
+
 void LspeCanvas::paintEvent(QPaintEvent *event)
 {
 	if (initialized)
@@ -66,7 +68,10 @@ void LspeCanvas::paintEvent(QPaintEvent *event)
 		painter->setPen(Qt::blue);
 		painter->setBrush(Qt::NoBrush);
 
-		man->traverse((lspe::abt::fnvisit)visit, this, lspe::abt::POSTORDER);
+		if (shouldDrawBBox)
+		{
+			man->traverse((lspe::abt::fnvisit)visit, this, lspe::abt::POSTORDER);
+		}
 		// qDebug() << "Finish traverse(fnvisit, void*, int)";
 
 		painter->setRenderHint(QPainter::Antialiasing);
@@ -170,85 +175,80 @@ void LspeCanvas::drawObject(Object *obj)
 
 void LspeCanvas::query(Object *obj)
 {
-	extra.obj = obj;
-	extra.userdata = painter;
-	man->query([](const lspe::abt::node *node, void *extra)
-	-> bool {
-		using namespace lspe::shape;
+	struct QueryExtra
+	{
+		Object *_object;
+		void *_extra;
+		void *_userdata;
+		void *_this;
+	};
 
-		char *stype[] = { "Line", "Circle", "Polygen", "Ellipse" };
-		auto e = (myQueryExtra*)extra;
-		auto p = e->obj;
-		auto q = (Object*)(node->userdata);
-		if (p->index != q->index)
-		{
-			lspe::collision::fnsupport supports[4] = {
-				lspe::collision::supportLine,
-				lspe::collision::supportCircle,
-				lspe::collision::supportPolygen,
-				lspe::collision::supportEllipse,
-			};
+	void *_extra[2] = { painter, &collider };
 
-			lspe::vec2 c1, c2;
-			switch (p->type)
-			{
-				case LINE:
-					c1 = lspe::centroidOf(*(Line*)(p->shape));
-				break;
-				case CIRCLE:
-					c1 = ((Circle*)(p->shape))->center;
-				break;
-				case POLYGEN:
-					c1 = lspe::centroidOf(*(Polygen*)(p->shape));
-				break;
-				case ELLIPSE:
-					c1 = ((Ellipse*)(p->shape))->center;
-				break;
-			}
-			switch (q->type)
-			{
-				case LINE:
-					c2 = lspe::centroidOf(*(Line*)(q->shape));
-				break;
-				case CIRCLE:
-					c2 = ((Circle*)(q->shape))->center;
-				break;
-				case POLYGEN:
-					c2 = lspe::centroidOf(*(Polygen*)(q->shape));
-				break;
-				case ELLIPSE:
-					c2 = ((Ellipse*)(q->shape))->center;
-				break;
-			}
-			lspe::vec2 firstdirection = c1 - c2;
+	extra._object   = obj;
+	extra._extra    = _extra;
+	extra._userdata = nullptr;
+	extra._this     = this;
 
-			lspe::Collider collider;
-			collider.setTestPair(p->shape, q->shape);
-			collider.bindSupports(supports[p->type], supports[q->type]);
-			collider.bindInitialGenerator(
-				[](lspe::Shape, lspe::Shape, const lspe::vec2&, void *extra)
-				-> lspe::vec2 { return *(lspe::vec2*)extra; }
-			);
-			collider.bindExtraData((void*)&firstdirection);
+	man->query(LspeCanvas::_query, obj->box, &extra);
+}
 
-			if (collider.collided())
-			{
-				if (p->index == e->last[0] && q->index == e->last[1]
-					|| p->index == e->last[1] && q->index == e->last[0])
-				{
+void configCollider(
+	lspe::Collider &collider,
+	const Object &a, const Object &b)
+{
+	collider.reset();
 
-				} else
-				{
-					qDebug() << "Collision Test Results:"
-						<< stype[p->type] << "x" << stype[q->type]
-						<< "[" << p->index << ":" << q->index << "]";
-					e->last[0] = p->index;
-					e->last[1] = q->index;
-				}
-			}
-		}
-		return true;
-	}, obj->box, &extra);
+	static lspe::collision::fnsupport supports[4] =
+	{
+		lspe::collision::supportLine,
+		lspe::collision::supportCircle,
+		lspe::collision::supportPolygen,
+		lspe::collision::supportEllipse,
+	};
+
+	lspe::vec2 c1 = lspe::centroidOf(*LSPE_DETAILSHAPE(&a));
+	lspe::vec2 c2 = lspe::centroidOf(*LSPE_DETAILSHAPE(&b));
+	lspe::vec2 firstdirection = c1 - c2;
+
+	collider.setTestPair(a.shape, b.shape);
+	collider.bindSupports(supports[a.type], supports[b.type]);
+	collider.bindInitialGenerator(
+		[](lspe::Shape, lspe::Shape, const lspe::vec2&, void *extra)
+		-> lspe::vec2 { return *(lspe::vec2*)extra; }
+	);
+	collider.bindExtraData(&firstdirection);
+}
+
+bool LspeCanvas::_query(const lspe::abt::node *node, void *extra)
+{
+	struct QueryExtra
+	{
+		Object *_object;
+		void *_extra;
+		void *_userdata;
+		void *_this;
+	};
+
+	auto qe       = (QueryExtra*)extra;
+	auto painter  = (QPainter*)((void**)(qe->_extra))[0];
+	auto collider = (lspe::Collider*)((void**)(qe->_extra))[1];
+	
+	auto p        = qe->_object;
+	auto q        = (Object*)(node->userdata);
+
+	configCollider(*collider, *p, *q);
+
+	static char *stype[] = { "Line", "Circle", "Polygen", "Ellipse" };
+
+	if (p->index != q->index && collider->collided())
+	{
+		qDebug() << "Collision Test Results:"
+			<< stype[p->type] << "x" << stype[q->type]
+			<< "[" << p->index << ":" << q->index << "]";
+	}
+
+	return true;
 }
 
 bool LspeCanvas::visit(lspe::abt::node *node, void *extra)
@@ -265,44 +265,6 @@ lspeman* LspeCanvas::setup()
 	auto man = new lspeman;
 
 	man->setBBoxExtension(4.0f);
-	qDebug() << "Set bbox2 extension =" << 4.0f;
-
-	{	//! Line
-		const size_t N = 4;
-		for (int i = 0; i < N; ++i)
-		{
-			man->newLine();
-		}
-		qDebug() << "Added" << N << "Lines";
-	}
-
-	{	//! CIRCLE
-		const size_t N = 4;
-		for (int i = 0; i < N; ++i)
-		{
-			man->newCircle();
-		}
-		qDebug() << "Added" << N << "Circles";
-	}
-
-	{	//! Polygen
-		const size_t N = 16;
-		for (int i = 0; i < N; ++i)
-		{
-			man->newPolygen();
-		}
-		qDebug() << "Added" << N << "Polygens";
-	}
-
-	{	//! Ellipse
-		const size_t N = 4;
-		for (int i = 0; i < N; ++i)
-		{
-			man->newEllipse();
-		}
-		qDebug() << "Added" << N << "Ellipses";
-	}
-
 	man->setStep(0.08f);
 
 	return man;
