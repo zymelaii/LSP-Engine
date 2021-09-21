@@ -8,15 +8,15 @@
 * **Base**
 
 1. - [x] Common Utils
-	- - [x] DEBUG Macros
-	- - [x] Universal Functions
-	- - [x] Math Constants
+	- * [x] DEBUG Macros
+	- * [x] Universal Functions
+	- * [x] Math Constants
 2. - [x] Vector
-	- - [x] vec2
-	- - [x] vec3
+	- * [x] vec2
+	- * [x] vec3
 3. - [x] Matrix
-	- -  [x] mat2x2
-	- -  [x] mat3x3
+	- * [x] mat2x2
+	- * [x] mat3x3
 
 ***
 
