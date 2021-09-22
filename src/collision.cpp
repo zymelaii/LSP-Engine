@@ -42,6 +42,7 @@ vec2 supportPolygen(Shape x, const vec2 &direction)
 
 	auto &v = p->vertices;
 	int index = 0, i;
+
 	// float maxval = dot(direction, v[1] - v[0]);
 
 	// for (i = 1; i < v.size() - 1; ++i)
@@ -83,7 +84,7 @@ vec2 supportEllipse(Shape x, const vec2 &direction)
 	mat2x2 mat_rotation = getRotateMatrix(p->rotation);
 	// mat2x2 mat_invrotation = getRotateMatrix(-p->rotation);
 
-	// vec2 ans;
+	vec2 ans;
 
 	// vec2 d2 = mat_invrotation * direction;
 	// if (d2.x >= -FLT_EPSILON && d2.x <= FLT_EPSILON)
@@ -100,8 +101,8 @@ vec2 supportEllipse(Shape x, const vec2 &direction)
 	// 	ans.y = bbkk / k / sqabk;
 	// }
 
-	vec2 ans = direction.normalized() * p->rx;
-	ans.y *= p->ry / p->rx;
+	vec2 nd = direction.normalized();
+	ans = { nd.x * p->rx, nd.y * p->ry };
 
 	return mat_rotation * ans + p->center;
 }
@@ -155,7 +156,7 @@ bool Collider::collided()
 {
 	LSPE_ASSERT(flag == 0x1f);
 
-	vec2 d;
+	vec2 d, pd;
 	d = getfirstdirection(shapes[0], shapes[1], d, extra);
 	if (d.norm() < FLT_EPSILON)
 	{
@@ -178,6 +179,10 @@ bool Collider::collided()
 		if (dot(d, d) < FLT_EPSILON) //! accelerate computation
 #endif
 		{
+			LSPE_DEBUG(
+				"Collision Test Result: "
+				"ORIGIN IS ON SIMPLEX EDGES (iteration=%d)",
+				iteration + 1);
 			tested = true;
 			iscollided = true;
 			LSPE_ASSERT(n == 3);
@@ -188,6 +193,10 @@ bool Collider::collided()
 
 		if (dot(simplex[n - 1], d) < 0)
 		{
+			LSPE_DEBUG(
+				"Collision Test Result: "
+				"UNEXPECTED SIMPLEX POINT (iteration=%d)",
+				iteration + 1);
 			tested = true;
 			iscollided = false;
 			return iscollided;
@@ -195,6 +204,10 @@ bool Collider::collided()
 
 		if (containOrigin(d, simplex, n))
 		{
+			LSPE_DEBUG(
+				"Collision Test Result: "
+				"GOOD (iteration=%d)",
+				iteration + 1);
 			++n;
 			tested = true;
 			iscollided = true;

@@ -44,6 +44,13 @@
      </widget>
     </item>
     <item>
+     <widget class="QCheckBox" name="cbCollisionResponse">
+      <property name="text">
+       <string>启用碰撞反馈</string>
+      </property>
+     </widget>
+    </item>
+    <item>
      <spacer name="verticalSpacer">
       <property name="orientation">
        <enum>Qt::Vertical</enum>

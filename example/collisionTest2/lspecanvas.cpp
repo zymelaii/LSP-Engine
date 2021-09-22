@@ -4,7 +4,8 @@
 LspeCanvas::LspeCanvas(QWidget *parent) :
     QWidget(parent), ui(new Ui::LspeCanvas),
     man(nullptr), shouldDrawBBox(false), initialized(false),
-    ondrag(false), selection(nullptr)
+    ondrag(false), selection(nullptr),
+    shouldBack(false), enableResponse(false)
 {
     ui->setupUi(this);
 
@@ -55,6 +56,11 @@ void LspeCanvas::render()
 void LspeCanvas::updateShouldDrawBBox(int status)
 {
 	shouldDrawBBox = status;
+}
+
+void LspeCanvas::updateShouldRespondCollision(int status)
+{
+	enableResponse = status;
 }
 
 void LspeCanvas::paintEvent(QPaintEvent *event)
@@ -258,9 +264,25 @@ void LspeCanvas::mouseMoveEvent(QMouseEvent *event)
 
 		auto displacement = point - precoord;
 		man->moveObject(selection->index, selection->box, displacement);
-		man->translate(selection->shape, selection->type, displacement);
 
-		precoord = point;
+		if (enableResponse)
+		{
+			query(selection);
+			if (shouldBack)
+			{
+				man->moveObject(selection->index, selection->box, -displacement);
+				shouldBack = false;
+				LSPE_DEBUG("Drag Object: rejected movement");
+			} else
+			{
+				man->translate(selection->shape, selection->type, displacement);
+				precoord = point;
+			}
+		} else
+		{
+			man->translate(selection->shape, selection->type, displacement);
+			precoord = point;
+		}
 
 		update();
 	}
@@ -351,6 +373,16 @@ void configCollider(
 	collider.bindExtraData(firstdirection);
 }
 
+bool LspeCanvas::hasCollisionResponse() const
+{
+	return enableResponse;
+}
+
+void LspeCanvas::cancelPreStep()
+{
+	shouldBack = true;
+}
+
 bool LspeCanvas::_query(const lspe::abt::node *node, void *extra)
 {
 	struct QueryExtra
@@ -377,6 +409,11 @@ bool LspeCanvas::_query(const lspe::abt::node *node, void *extra)
 		qDebug() << "Collision Test Results:"
 			<< stype[p->type] << "x" << stype[q->type]
 			<< "[" << p->index << ":" << q->index << "]";
+		auto lc = (LspeCanvas*)(qe->_this);
+		if (lc->hasCollisionResponse())
+		{
+			lc->cancelPreStep();
+		}
 	}
 
 	delete (lspe::vec2*)collider->getExtraData();
@@ -399,6 +436,10 @@ lspeman* LspeCanvas::setup()
 
 	man->setBBoxExtension(4.0f);
 
+	man->newLine();
+
+	man->newPolygen();
+	man->newPolygen();
 	man->newPolygen();
 	man->newPolygen();
 

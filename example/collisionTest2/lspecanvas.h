@@ -22,9 +22,13 @@ public:
 	//! customizable function
 	void paintEvent(QPaintEvent *event);
 
+	bool hasCollisionResponse() const;
+	void cancelPreStep();
+
 public slots:
 	void render();
 	void updateShouldDrawBBox(int status);
+	void updateShouldRespondCollision(int status);
 
 private:
 	Ui::LspeCanvas *ui;
@@ -42,6 +46,9 @@ private:
 	bool       ondrag;    //! mark whether has dragged a object
 	Object    *selection; //! pointer to the selected object
 	lspe::vec2 precoord;  //! object's previous coordination
+
+	bool enableResponse;
+	bool shouldBack;
 
 	void mousePressEvent(QMouseEvent* event);
 	void mouseMoveEvent(QMouseEvent *event);
