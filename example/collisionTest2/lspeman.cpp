@@ -138,6 +138,7 @@ void lspeman::quickGenerate(Shape shape, int type)
 			e->rx = u2(this->e);
 			e->ry = u2(this->e);
 			e->rotation = u3(this->e) * Pi;
+			// e->rotation = 0;
 		}
 		break;
 		default: LSPE_ASSERT(false);

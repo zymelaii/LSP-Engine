@@ -15,12 +15,6 @@ vec2 supportLine(Shape x, const vec2 &direction)
 	LSPE_ASSERT(p->type >= 0 && p->type <= 2);
 	LSPE_ASSERT(!(p->pa == p->pb));
 
-#if 0
-	vec2 v = p->pa - p->pb;
-	float t1 = dot(v, direction);
-	float t2 = dot(-v, direction);
-#endif
-
 	float t1 = dot(p->pa, direction);
 	float t2 = dot(p->pb, direction);
 
@@ -43,25 +37,6 @@ vec2 supportPolygen(Shape x, const vec2 &direction)
 	auto &v = p->vertices;
 	int index = 0, i;
 
-	// float maxval = dot(direction, v[1] - v[0]);
-
-	// for (i = 1; i < v.size() - 1; ++i)
-	// {
-	// 	float val = dot(direction, v[i + 1] - v[i]);
-	// 	if (val > maxval)
-	// 	{
-	// 		maxval = val;
-	// 		index = i;
-	// 	}
-	// }
-
-	// if (dot(direction, v[0] - v[i]) > maxval)
-	// {
-	// 	index = i;
-	// }
-
-	// return v[(index + 1) % v.size()] - v[index];
-
 	float maxval = dot(direction, v[0]);
 	for (int i = 1; i < v.size(); ++i)
 	{
@@ -82,27 +57,10 @@ vec2 supportEllipse(Shape x, const vec2 &direction)
 	LSPE_ASSERT(p->rx > 0 && p->ry > 0);
 
 	mat2x2 mat_rotation = getRotateMatrix(p->rotation);
-	// mat2x2 mat_invrotation = getRotateMatrix(-p->rotation);
+	mat2x2 mat_invrotation = getRotateMatrix(-p->rotation);
 
-	vec2 ans;
-
-	// vec2 d2 = mat_invrotation * direction;
-	// if (d2.x >= -FLT_EPSILON && d2.x <= FLT_EPSILON)
-	// {
-	// 	ans.x = 0;
-	// 	ans.y = d2.y > 0 ? p->ry : -p->ry;
-	// } else
-	// {
-	// 	float k = d2.y / d2.x;
-	// 	float bbkk = p->ry * p->ry * k * k;
-	// 	float sqabk = sqrt(p->rx * p->rx + bbkk);
-
-	// 	ans.x = sqabk - bbkk / sqabk;
-	// 	ans.y = bbkk / k / sqabk;
-	// }
-
-	vec2 nd = direction.normalized();
-	ans = { nd.x * p->rx, nd.y * p->ry };
+	vec2 rd = (mat_invrotation * direction).normalized();
+	vec2 ans = { rd.x * p->rx, rd.y * p->ry };
 
 	return mat_rotation * ans + p->center;
 }
@@ -156,9 +114,8 @@ bool Collider::collided()
 {
 	LSPE_ASSERT(flag == 0x1f);
 
-	vec2 d, pd;
-	d = getfirstdirection(shapes[0], shapes[1], d, extra);
-	if (d.norm() < FLT_EPSILON)
+	vec2 d = getfirstdirection(shapes[0], shapes[1], d, extra);
+	if (dot(d, d) < FLT_EPSILON)
 	{
 		d = { 1.0f, 0.0f };
 		LSPE_DEBUG("Collision Test: take (1, 0) as the first direction");
@@ -170,14 +127,9 @@ bool Collider::collided()
 	d = -d;
 
 	int iteration = 0;
-	while (iteration++ < 32)
+	while (iteration++ < 16)
 	{
-
-#ifdef DEBUG
-		if (d.norm() < FLT_EPSILON)
-#else
-		if (dot(d, d) < FLT_EPSILON) //! accelerate computation
-#endif
+		if (dot(d, d) < FLT_EPSILON) //! <=> d.norm() == 0
 		{
 			LSPE_DEBUG(
 				"Collision Test Result: "
@@ -206,7 +158,7 @@ bool Collider::collided()
 		{
 			LSPE_DEBUG(
 				"Collision Test Result: "
-				"GOOD (iteration=%d)",
+				"PASS (iteration=%d)",
 				iteration + 1);
 			++n;
 			tested = true;
@@ -235,95 +187,7 @@ vec2 Collider::computePenetration()
 
 	LSPE_ASSERT(expandedSimplex.size() == 0);
 
-	expandedSimplex.push_back(simplex[0]);
-	expandedSimplex.push_back(simplex[1]);
-	expandedSimplex.push_back(simplex[2]);
-
-	vec2 direction, M0(0, 0);
-
-	while (true)
-	{
-		vec2 a = expandedSimplex.back();
-		vec2 b = expandedSimplex.front();
-		vec2 l = b - a;
-
-		float tmp = cross(a, b);
-		float minval = tmp * tmp / dot(l, l);
-
-		int index = expandedSimplex.size() - 1;
-		for (int i = 0; i < expandedSimplex.size() - 1; ++i)
-		{
-			a = expandedSimplex[i];
-			b = expandedSimplex[i + 1];
-			l = b - a;
-
-			tmp = cross(a, b);
-			float val = tmp * tmp / dot(l, l);
-
-			if (val < minval)
-			{
-				minval = val;
-				index = i;
-			}
-		}
-
-		a = expandedSimplex[index];
-		b = expandedSimplex[(index + 1) % expandedSimplex.size()];
-		l = b - a;
-
-		direction = { l.y, -l.x };
-		if (dot(a, direction) < dot(a, -direction))
-		{
-			direction = -direction;
-		}
-
-		vec2 M = support[0](shapes[0], direction)
-			- support[1](shapes[1], -direction);
-
-		if (dot(M, direction) < 0)
-		{
-			LSPE_DEBUG("Compute Penetration Vector: "
-				"new Minkowski Point wasn't in the expected direction; "
-				"direction=(%f,%f); "
-				"Minkowski Point=(%f,%f)",
-				direction.x, direction.y, M.x, M.y);
-			break;
-		}
-
-#if 0
-		if (M == a || M == b)
-		{
-			LSPE_DEBUG("Compute Penetration Vector: "
-				"M3 == M1 or M3 == M2");
-			break;
-		}
-#endif
-
-		bool shouldQuit = false;
-		for (int i = 0; i < expandedSimplex.size(); ++i)
-		{
-			if (M == expandedSimplex[i])
-			{
-				shouldQuit = true;
-				break;
-			}
-		}
-		if (shouldQuit) break;
-
-		if ((M - a).norm() + (M - b).norm() > FLT_EPSILON)
-		{
-			expandedSimplex.push_back(M);
-			LSPE_DEBUG("Compute Penetration Vector: "
-				"added Minkowski Point (%f,%f); "
-				"S(ExpandedSimplex)=%d;",
-				M.x, M.y, expandedSimplex.size());
-		} else
-		{
-			LSPE_DEBUG("Compute Penetration Vector: "
-				"|M1 - M3| + |M2 - M3| < e");
-			break;
-		}
-	}
+	//! TODO
 
 	return direction;
 }
@@ -395,21 +259,8 @@ bool processSimplex2(vec2 &direction, vec2 *simplex)
 	vec2 ao = -a;
 	vec2 ab = b - a;
 
-#if 0
-	if (dot(ao, ab) > 0)
-	{
-		vec2 ab_perp = triproduct(ab, ao, ab);
-		direction = ab_perp.normalized();
-	} else
-	{
-		direction = ao;
-	}
-#endif
-
-#if 1
 	vec2 ab_perp = triproduct(ab, ao, ab);
 	direction = ab_perp.normalized();
-#endif
 
 	return false;
 }
@@ -429,28 +280,6 @@ bool processSimplex3(vec2 &direction, vec2 *simplex)
 	vec2 ab_perp = triproduct(ac, ab, ab);
 	vec2 ac_perp = triproduct(ab, ac, ac);
 
-#if 0
-	if (dot(ao, ac_perp) > 0)
-	{
-		if (dot(ao, ac) > 0)
-		{
-			b = c;
-			direction = ac_perp.normalized();
-		} else
-		{
-			return processSimplex2(direction, simplex);
-		}
-	} else if (dot(ab, ab_perp) > 0)
-	{
-		direction = ab_perp.normalized();
-		// return processSimplex2(direction, simplex);
-	} else
-	{
-		return true;
-	}
-#endif
-
-#if 1
 	if (dot(ao, ab_perp) > 0)
 	{
 		direction = ab_perp.normalized();
@@ -462,7 +291,6 @@ bool processSimplex3(vec2 &direction, vec2 *simplex)
 	{
 		return true;
 	}
-#endif
 
 	return false;
 }
