@@ -230,7 +230,7 @@ void lspeman::delObject(int oid)
 	}
 }
 
-bool lspeman::moveObject(int oid, const bbox2 &box,
+void lspeman::moveObject(int oid, const bbox2 &box,
 		const vec2 &displacement)
 {
 	LSPE_ASSERT(tree != nullptr);
@@ -240,12 +240,7 @@ bool lspeman::moveObject(int oid, const bbox2 &box,
 	if (it == objects.end()) return false;
 
 	bool needMove = tree->moveObject(oid, box, displacement);
-	if (needMove)
-	{
-		(*it)->box = { box.lower + displacement, box.upper + displacement };
-	}
-
-	return needMove;
+	(*it)->box = { box.lower + displacement, box.upper + displacement };
 }
 
 void lspeman::setBBoxExtension(float r)
@@ -269,6 +264,12 @@ void lspeman::query(fnvisit processor,
 	const bbox2 &box, void *extra)
 {
 	tree->query(processor, box, extra);
+}
+
+void lspeman::query(fnvisit processor,
+	const vec2 &point, void *extra)
+{
+	tree->query(processor, point, extra);
 }
 
 void lspeman::stepforward()

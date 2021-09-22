@@ -11,3 +11,7 @@ debug: liblsped.a ${SOURCE} make-debug.yml
 
 release: liblspe.a ${SOURCE} make-release.yml
 	@qtcc make-release.yml
+
+.PHONY: clean
+clean:
+	-rm -rf Debug Release

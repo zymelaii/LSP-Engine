@@ -230,22 +230,18 @@ void lspeman::delObject(int oid)
 	}
 }
 
-bool lspeman::moveObject(int oid, const bbox2 &box,
+void lspeman::moveObject(int oid, const bbox2 &box,
 		const vec2 &displacement)
 {
 	LSPE_ASSERT(tree != nullptr);
 
 	auto it = std::find_if(objects.begin(), objects.end(),
 		[oid](const Object *obj) { return oid == obj->index; });
+
 	if (it == objects.end()) return false;
 
-	bool needMove = tree->moveObject(oid, box, displacement);
-	if (needMove)
-	{
-		(*it)->box = { box.lower + displacement, box.upper + displacement };
-	}
-
-	return needMove;
+	tree->moveObject(oid, box, displacement);
+	(*it)->box = { box.lower + displacement, box.upper + displacement };
 }
 
 void lspeman::setBBoxExtension(float r)

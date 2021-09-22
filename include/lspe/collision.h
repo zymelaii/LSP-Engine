@@ -89,6 +89,7 @@ public:
 	//! it can be used within any callback function
 	//! whose type is fnsupport2 or Collider::fndebug
 	void bindExtraData(void *extra);
+	void* getExtraData();
 
 	//! clear status collision test
 	//! call it before you perform a second test

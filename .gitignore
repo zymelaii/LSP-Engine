@@ -37,3 +37,4 @@
 build/
 example/abtree/*/
 example/collisionTest/*/
+example/collisionTest2/*/

@@ -83,6 +83,8 @@ public:
 
 	void query(abt::fnvisit processor,
 		const bbox2 &box, void *extra = nullptr);
+	void query(abt::fnvisit processor,
+		const vec2 &point, void *extra = nullptr);
 
 protected:
 

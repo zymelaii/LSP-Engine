@@ -21,17 +21,39 @@ struct _querywalker
 {
 	fnvisit processor;
 	void   *extra;
-	bbox2   testbox;
+	union
+	{
+		bbox2 *testbox;
+		vec2  *testpoint;
+	};
 	bool    finished;
 };
 
-bool abtreeQueryWalker(const node *node, void *extra)
+bool queryWalkerWithTestBox(const node *node, void *extra)
 {
 	auto e = (_querywalker*)extra;
 
 	if (e->finished) return false;
 
-	if (overlap(e->testbox, node->box))
+	if (overlap(node->box, *e->testbox))
+	{
+		if (node->isLeaf())
+		{
+			e->finished = !e->processor(node, e->extra);
+		}
+		return !e->finished;
+	}
+
+	return false;
+}
+
+bool queryWalkerWithTestPoint(const node *node, void *extra)
+{
+	auto e = (_querywalker*)extra;
+
+	if (e->finished) return false;
+
+	if (contain(node->box, *e->testpoint))
 	{
 		if (node->isLeaf())
 		{
@@ -235,14 +257,34 @@ void abtree::query(
 {
 	LSPE_ASSERT(processor != nullptr);
 
+	bbox2 testbox = box;
+
 	abt::_querywalker qw;
 	qw.processor = processor;
 	qw.extra     = extra;
-	qw.testbox   = box;
+	qw.testbox   = &testbox;
 	qw.finished  = false;
 
 	abt::traversePreorder(
-		m_nodes, m_root, abt::abtreeQueryWalker, (void*)&qw);
+		m_nodes, m_root, abt::queryWalkerWithTestBox, &qw);
+}
+
+void abtree::query(
+	abt::fnvisit processor,
+	const vec2 &point, void *extra)
+{
+	LSPE_ASSERT(processor != nullptr);
+
+	vec2 testpoint = point;
+
+	abt::_querywalker qw;
+	qw.processor = processor;
+	qw.extra     = extra;
+	qw.testpoint = &testpoint;
+	qw.finished  = false;
+
+	abt::traversePreorder(
+		m_nodes, m_root, abt::queryWalkerWithTestPoint, &qw);
 }
 
 int abtree::allocate()

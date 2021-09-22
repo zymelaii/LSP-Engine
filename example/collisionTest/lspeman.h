@@ -46,7 +46,7 @@ public:
 	int addObject(lspe::Shape shape, int type,
 		const lspe::bbox2 *pbb = nullptr);
 	void delObject(int oid);
-	bool moveObject (int oid, const lspe::bbox2 &box,
+	void moveObject (int oid, const lspe::bbox2 &box,
 		const lspe::vec2 &displacement);
 
 	void setBBoxExtension(float r);

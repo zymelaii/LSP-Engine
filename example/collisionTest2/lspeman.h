@@ -23,19 +23,6 @@ struct Object
 	int index;
 };
 
-///
-//! usage:
-//! 	Object obj;
-//! 	auto e = LSPE_DETAILSHAPE(&obj);
-//! 	e->center;
-///
-#define LSPE_DETAILSHAPE(objptr)                                     ( \
-(objptr)->type == LINE    ? (lspe::shape::Line   *)((objptr)->shape) : \
-(objptr)->type == CIRCLE  ? (lspe::shape::Circle *)((objptr)->shape) : \
-(objptr)->type == POLYGEN ? (lspe::shape::Polygen*)((objptr)->shape) : \
-(objptr)->type == ELLIPSE ? (lspe::shape::Ellipse*)((objptr)->shape) : \
-nullptr)
-
 using ObjectList = std::vector<Object*>;
 
 class lspeman
@@ -59,7 +46,7 @@ public:
 	int addObject(lspe::Shape shape, int type,
 		const lspe::bbox2 *pbb = nullptr);
 	void delObject(int oid);
-	bool moveObject (int oid, const lspe::bbox2 &box,
+	void moveObject(int oid, const lspe::bbox2 &box,
 		const lspe::vec2 &displacement);
 
 	void setBBoxExtension(float r);
@@ -70,6 +57,8 @@ public:
 
 	void query(lspe::abt::fnvisit processor,
 		const lspe::bbox2 &box, void *extra = nullptr);
+	void query(lspe::abt::fnvisit processor,
+		const lspe::vec2 &point, void *extra = nullptr);
 
 	void stepforward(); //! customizable function
 

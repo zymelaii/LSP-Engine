@@ -3,7 +3,8 @@
 
 LspeCanvas::LspeCanvas(QWidget *parent) :
     QWidget(parent), ui(new Ui::LspeCanvas),
-    man(nullptr), shouldDrawBBox(false), initialized(false)
+    man(nullptr), shouldDrawBBox(false), initialized(false),
+    ondrag(false), selection(nullptr)
 {
     ui->setupUi(this);
 
@@ -27,8 +28,8 @@ LspeCanvas::~LspeCanvas()
 
 	delete man;
 	man = nullptr;
-    
-    delete ui;
+
+	delete ui;
 }
 
 void LspeCanvas::setInterval(int interval)
@@ -173,6 +174,116 @@ void LspeCanvas::drawObject(Object *obj)
 	}
 }
 
+bool querySelection(const lspe::abt::node *node, void *extra)
+{
+	using namespace lspe::shape;
+
+	struct QueryExtra
+	{
+		Object    **_selection;
+		bool       *_ondrag;
+		lspe::vec2 *_point;
+	};
+
+	auto  qe = (QueryExtra*)extra;
+	auto obj = (Object*)(node->userdata);
+
+	LSPE_DEBUG("Execute querySelection; target index=%d;", obj->index);
+
+	bool hit = false;
+	switch (obj->type)
+	{
+		case LINE:    hit = false; break;
+		case CIRCLE:  hit = lspe::contain(*(Circle *)(obj->shape), *qe->_point); break;
+		case POLYGEN: hit = lspe::contain(*(Polygen*)(obj->shape), *qe->_point); break;
+		case ELLIPSE: hit = lspe::contain(*(Ellipse*)(obj->shape), *qe->_point); break;
+		default: LSPE_ASSERT(false);
+	}
+
+	static const char *ShapeName[] = { "Circle", "Polygen", "Ellipse" };
+
+	if (hit)
+	{
+		LSPE_DEBUG("Execute querySelection: %s[%d] has been selected",
+			ShapeName[obj->type - CIRCLE],
+			obj->index);
+
+		*qe->_selection = obj;
+		*qe->_ondrag    = true;
+		return false;
+	}
+
+	LSPE_DEBUG("Execute querySelection: no selection");
+
+	return true;
+}
+
+void LspeCanvas::mousePressEvent(QMouseEvent *event)
+{
+	if (event->button() == Qt::LeftButton)
+	{
+		LSPE_ASSERT(!ondrag);
+
+		lspe::vec2 point(event->x(), event->y());
+		LSPE_DEBUG("Entry mousePressEvent: Point(%f,%f)",
+			point.x, point.y);
+
+		struct QueryExtra
+		{
+			Object    **_selection;
+			bool       *_ondrag;
+			lspe::vec2 *_point;
+		} extra;
+
+		extra._selection = &selection;
+		extra._ondrag    = &ondrag;
+		extra._point     = &point;
+
+		man->query(querySelection, point, &extra);
+
+		if (ondrag)
+		{
+			precoord = point;
+		}
+	}
+}
+
+void LspeCanvas::mouseMoveEvent(QMouseEvent *event)
+{
+	if (ondrag)
+	{
+		LSPE_ASSERT(selection != nullptr);
+
+		lspe::vec2 point(event->x(), event->y());
+
+		auto displacement = point - precoord;
+		man->moveObject(selection->index, selection->box, displacement);
+		man->translate(selection->shape, selection->type, displacement);
+
+		precoord = point;
+
+		update();
+	}
+}
+
+void LspeCanvas::mouseReleaseEvent(QMouseEvent *event)
+{
+	if (event->button() == Qt::LeftButton)
+	{
+		if (!ondrag) return;
+
+		LSPE_ASSERT(selection != nullptr);
+
+		lspe::vec2 point(event->x(), event->y());
+		LSPE_DEBUG("Entry mousePressEvent: Point(%f,%f)",
+			point.x, point.y);
+
+		selection = nullptr;
+		ondrag = false;
+	}
+}
+
+
 void LspeCanvas::query(Object *obj)
 {
 	struct QueryExtra
@@ -181,7 +292,7 @@ void LspeCanvas::query(Object *obj)
 		void *_extra;
 		void *_userdata;
 		void *_this;
-	};
+	} extra;
 
 	void *_extra[2] = { painter, &collider };
 
@@ -197,6 +308,8 @@ void configCollider(
 	lspe::Collider &collider,
 	const Object &a, const Object &b)
 {
+	using namespace lspe::shape;
+
 	collider.reset();
 
 	static lspe::collision::fnsupport supports[4] =
@@ -207,9 +320,27 @@ void configCollider(
 		lspe::collision::supportEllipse,
 	};
 
-	lspe::vec2 c1 = lspe::centroidOf(*LSPE_DETAILSHAPE(&a));
-	lspe::vec2 c2 = lspe::centroidOf(*LSPE_DETAILSHAPE(&b));
-	lspe::vec2 firstdirection = c1 - c2;
+	lspe::vec2 c1, c2;
+
+	switch (a.type)
+	{
+		case LINE:    c1 = lspe::centroidOf(*(Line   *)(a.shape)); break;
+		case CIRCLE:  c1 = lspe::centroidOf(*(Circle *)(a.shape)); break;
+		case POLYGEN: c1 = lspe::centroidOf(*(Polygen*)(a.shape)); break;
+		case ELLIPSE: c1 = lspe::centroidOf(*(Ellipse*)(a.shape)); break;
+		default: LSPE_ASSERT(false);
+	}
+
+	switch (b.type)
+	{
+		case LINE:    c2 = lspe::centroidOf(*(Line   *)(b.shape)); break;
+		case CIRCLE:  c2 = lspe::centroidOf(*(Circle *)(b.shape)); break;
+		case POLYGEN: c2 = lspe::centroidOf(*(Polygen*)(b.shape)); break;
+		case ELLIPSE: c2 = lspe::centroidOf(*(Ellipse*)(b.shape)); break;
+		default: LSPE_ASSERT(false);
+	}
+
+	lspe::vec2 *firstdirection = new lspe::vec2(c1 - c2);
 
 	collider.setTestPair(a.shape, b.shape);
 	collider.bindSupports(supports[a.type], supports[b.type]);
@@ -217,7 +348,7 @@ void configCollider(
 		[](lspe::Shape, lspe::Shape, const lspe::vec2&, void *extra)
 		-> lspe::vec2 { return *(lspe::vec2*)extra; }
 	);
-	collider.bindExtraData(&firstdirection);
+	collider.bindExtraData(firstdirection);
 }
 
 bool LspeCanvas::_query(const lspe::abt::node *node, void *extra)
@@ -248,6 +379,8 @@ bool LspeCanvas::_query(const lspe::abt::node *node, void *extra)
 			<< "[" << p->index << ":" << q->index << "]";
 	}
 
+	delete (lspe::vec2*)collider->getExtraData();
+
 	return true;
 }
 
@@ -265,6 +398,16 @@ lspeman* LspeCanvas::setup()
 	auto man = new lspeman;
 
 	man->setBBoxExtension(4.0f);
+
+	man->newPolygen();
+	man->newPolygen();
+
+	man->newCircle();
+	man->newCircle();
+
+	man->newEllipse();
+	man->newEllipse();
+
 	man->setStep(0.08f);
 
 	return man;

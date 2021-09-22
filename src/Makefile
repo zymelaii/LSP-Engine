@@ -11,6 +11,7 @@ INCS := -I${HOME}/include
 LIBS :=
 DIST := ${HOME}/build
 
+# CFLAGS := -O0 -pipe -fno-keep-inline-dllexport -fexceptions
 CFLAGS :=
 
 OBJECTS := vec.obj mat.obj \

@@ -38,6 +38,15 @@ private:
 
 	lspe::Collider collider;
 
+	//! drag part
+	bool       ondrag;    //! mark whether has dragged a object
+	Object    *selection; //! pointer to the selected object
+	lspe::vec2 precoord;  //! object's previous coordination
+
+	void mousePressEvent(QMouseEvent* event);
+	void mouseMoveEvent(QMouseEvent *event);
+	void mouseReleaseEvent(QMouseEvent *event);
+
 	//! customizable function
 	static bool visit(lspe::abt::node *node, void *extra);
 	void drawObject(Object *obj);

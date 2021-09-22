@@ -40,7 +40,7 @@ Ellipse rotationOf(const mat2x2 &mat_rotation, const Ellipse &x)
 	return { x.center, rotation, x.rx, x.ry };
 }
 
-bool contain(Ellipse &a, const vec2 &b)
+bool contain(const Ellipse &a, const vec2 &b)
 {
 	mat2x2 mat_rotation = getRotateMatrix(-a.rotation);
 	vec2 c = mat_rotation * (b - a.center);

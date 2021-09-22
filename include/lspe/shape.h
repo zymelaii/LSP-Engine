@@ -56,9 +56,9 @@ shape::Ellipse rotationOf(const mat2x2 &mat_rotation, const shape::Ellipse &x);
 shape::Bezier2 rotationOf(const mat2x2 &mat_rotation, const shape::Bezier2 &x);
 shape::Bezier3 rotationOf(const mat2x2 &mat_rotation, const shape::Bezier3 &x);
 
-bool contain(shape::Circle  &a, const vec2 &b);
-bool contain(shape::Polygen &a, const vec2 &b);
-bool contain(shape::Ellipse &a, const vec2 &b);
+bool contain(const shape::Circle  &a, const vec2 &b);
+bool contain(const shape::Polygen &a, const vec2 &b);
+bool contain(const shape::Ellipse &a, const vec2 &b);
 
 namespace shape
 {

@@ -11,6 +11,7 @@
 #include <QString>
 #include <QDebug>
 #include <QPainter>
+#include <QMouseEvent>
 
 #include "lspeman.h"
 

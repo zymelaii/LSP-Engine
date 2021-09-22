@@ -8,5 +8,5 @@ MyShape::MyShape(QWidget *parent) :
 
 MyShape::~MyShape()
 {
-    delete ui;
+    
 }

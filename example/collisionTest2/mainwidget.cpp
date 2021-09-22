@@ -13,6 +13,8 @@ MainWidget::MainWidget(QWidget *parent) :
 
 	connect(ui->cbAABB, QCheckBox::stateChanged,
 		ui->canvas, LspeCanvas::updateShouldDrawBBox);
+
+	ui->canvas->setMouseTracking(true);
 }
 
 MainWidget::~MainWidget()

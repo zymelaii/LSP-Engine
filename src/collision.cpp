@@ -359,6 +359,11 @@ void Collider::bindExtraData(void *extra)
 	this->extra = extra;
 }
 
+void* Collider::getExtraData()
+{
+	return extra;
+}
+
 void Collider::reset()
 {
 	tested = false;
