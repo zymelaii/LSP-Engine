@@ -79,11 +79,14 @@
 	* [`Box2D-Lite`](https://github.com/erincatto/box2d-lite)
 	* [`C++ implementation of GJK and EPA algorithms for 2D collision detection`](https://github.com/Discordia/gjk-epa)
 * **PDF**
-	* [HowDoPhysicsEnginesWork.pdf](https://github.com/erincatto/box2d-lite/blob/master/docs/HowDoPhysicsEnginesWork.pdf)
-	* [GDC2006_Catto_Erin_PhysicsTutorial.pdf](https://github.com/erincatto/box2d-lite/blob/master/docs/GDC2006_Catto_Erin_PhysicsTutorial.pdf)
-	* [ErinCatto_DynamicBVH_GDC2019.pdf](https://box2d.org/files/ErinCatto_DynamicBVH_GDC2019.pdf)
-	* [applsci-09-04857.pdf](https://mdpi-res.com/d_attachment/applsci/applsci-09-04857/article_deploy/applsci-09-04857.pdf)
+	* [A Fast and Robust GJK Implementation for Collision Detection of Convex Objects](http://www.dtecta.com/papers/jgt98convex.pdf)
+	* [How Do Physics Engines Work?](https://github.com/erincatto/box2d-lite/blob/master/docs/HowDoPhysicsEnginesWork.pdf)
+	* [Fast and Simple Physics using Sequential Impulses](https://github.com/erincatto/box2d-lite/blob/master/docs/GDC2006_Catto_Erin_PhysicsTutorial.pdf)
+	* [Dynamic Bounding Volume Hierarchies](https://box2d.org/files/ErinCatto_DynamicBVH_GDC2019.pdf)
+	* [An Efficient Parallel Algorithm for Polygons Overlay Analysis](https://mdpi-res.com/d_attachment/applsci/applsci-09-04857/article_deploy/applsci-09-04857.pdf)
 * **知乎**
+	* [游戏物理引擎(三) 碰撞检测之Narrow-Phase](https://zhuanlan.zhihu.com/p/127844705)
+	* [现代游戏物理引擎入门(三)——碰撞检测(上)](https://zhuanlan.zhihu.com/p/396719279)
 	* [2D凸多边形碰撞检测算法（二） - GJK（上）](https://zhuanlan.zhihu.com/p/177006015)
 	* [2D凸多边形碰撞检测算法（二） - GJK（下）](https://zhuanlan.zhihu.com/p/178583914)
 	* [2D凸多边形碰撞检测算法（二） - GJK 椭圆、曲线与最近点计算](https://zhuanlan.zhihu.com/p/355267104)
