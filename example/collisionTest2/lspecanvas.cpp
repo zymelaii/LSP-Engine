@@ -409,6 +409,17 @@ bool LspeCanvas::_query(const lspe::abt::node *node, void *extra)
 		qDebug() << "Collision Test Results:"
 			<< stype[p->type] << "x" << stype[q->type]
 			<< "[" << p->index << ":" << q->index << "]";
+
+		lspe::vec2 v = collider->computePenetration();
+		painter->save();
+		painter->setPen(Qt::cyan);
+		painter->drawLine(
+			(p->box.lower.x + p->box.upper.x) / 2,
+			(p->box.lower.y + p->box.upper.y) / 2,
+			(p->box.lower.x + p->box.upper.x) / 2 + v.x,
+			(p->box.lower.y + p->box.upper.y) / 2 + v.y);
+		painter->restore();
+
 		auto lc = (LspeCanvas*)(qe->_this);
 		if (lc->hasCollisionResponse())
 		{

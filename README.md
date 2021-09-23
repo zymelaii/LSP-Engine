@@ -84,7 +84,9 @@
 	* [Fast and Simple Physics using Sequential Impulses](https://github.com/erincatto/box2d-lite/blob/master/docs/GDC2006_Catto_Erin_PhysicsTutorial.pdf)
 	* [Dynamic Bounding Volume Hierarchies](https://box2d.org/files/ErinCatto_DynamicBVH_GDC2019.pdf)
 	* [An Efficient Parallel Algorithm for Polygons Overlay Analysis](https://mdpi-res.com/d_attachment/applsci/applsci-09-04857/article_deploy/applsci-09-04857.pdf)
+	* [Proximity Queries and Penetration Depth Computation on 3D Game Objects](http://www.dtecta.com/papers/gdc2001depth.pdf)
 * **知乎**
+	* [游戏物理引擎(二) 碰撞检测之Broad-Phase](https://zhuanlan.zhihu.com/p/113415779)
 	* [游戏物理引擎(三) 碰撞检测之Narrow-Phase](https://zhuanlan.zhihu.com/p/127844705)
 	* [现代游戏物理引擎入门(三)——碰撞检测(上)](https://zhuanlan.zhihu.com/p/396719279)
 	* [2D凸多边形碰撞检测算法（二） - GJK（上）](https://zhuanlan.zhihu.com/p/177006015)
@@ -92,7 +94,6 @@
 	* [2D凸多边形碰撞检测算法（二） - GJK 椭圆、曲线与最近点计算](https://zhuanlan.zhihu.com/p/355267104)
 	* [2D凸多边形碰撞检测算法（二） - EPA](https://zhuanlan.zhihu.com/p/178841676)
 	* [2D凸多边形碰撞检测算法（三）- MPR](https://zhuanlan.zhihu.com/p/370089434)
-	* [游戏物理引擎(二) 碰撞检测之Broad-Phase](https://zhuanlan.zhihu.com/p/113415779)
 	* [学习｜判断一个点是否在三角形内](https://zhuanlan.zhihu.com/p/106253152)
 	* [连续碰撞检测 - CCD](https://zhuanlan.zhihu.com/p/380532960)
 * **CSDN**
