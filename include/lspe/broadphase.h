@@ -7,4 +7,63 @@
 namespace lspe
 {
 
+namespace broadphase
+{
+
+typedef void (*fnnewpair)(
+	void *firstData, void *secondData, void *extra);
+
+};
+
+/********************************
+ *  @author: ZYmelaii
+ *
+ *  @BroadPhase: intro for BroadPhase
+ *
+ *  @brief: approximately an proxy of abtree
+ *
+ *  @NOTES: 
+ *******************************/
+class BroadPhase
+{
+public: friend BroadPhase::_query(const abt::node *node, void *extra);
+public:
+	BroadPhase();
+	~BroadPhase();
+
+	int  addObject(const bbox2 &box, void *userdata);
+	void delObject(int id);
+	void moveObject(int id, const bbox2 &box, const vec2 &displacement);
+
+	void addMove(int id);
+	void delMove(int id);
+
+	void updatePairs(broadphase::fnnewpair processor,
+		void *extra = nullptr);
+
+	void query(abt::fnvisit processor, const bbox2 &box, void *extra);
+		//! query function that calls abtree::query()
+
+protected:
+
+private:
+	abtree tree;
+
+	int queryId;
+
+	//! buffered all potential collision-rich objects
+	int *moveBuffer;
+	int moveCapacity;
+	int moveCount;
+
+	//! buffered all test pairs
+	int (*pairBuffer)[2];
+	int pairCapacity;
+	int pairCount;
+
+	static void _query(const abt::node *node, void *extra);
+		//! query callback for abtree query
+
+};
+
 };

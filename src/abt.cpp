@@ -101,6 +101,8 @@ void traversePreorder(node *tree, int index, fnvisit visit, void *extra)
 
 	node tmp;
 	memcpy(&tmp, tree + index, sizeof(node));
+	tmp.index = index;
+
 	bool shouldExit = !visit(&tmp, extra);
 	if (shouldExit) return;
 
@@ -116,6 +118,8 @@ void traverseInorder(node *tree, int index, fnvisit visit, void *extra)
 
 	node tmp;
 	memcpy(&tmp, tree + index, sizeof(node));
+	tmp.index = index;
+
 	bool shouldExit = !visit(&tmp, extra);
 	if (shouldExit) return;
 
@@ -131,6 +135,8 @@ void traversePostorder(node *tree, int index, fnvisit visit, void *extra)
 
 	node tmp;
 	memcpy(&tmp, tree + index, sizeof(node));
+	tmp.index = index;
+
 	bool shouldExit = !visit(&tmp, extra);
 	if (shouldExit) return;
 }
@@ -249,6 +255,40 @@ bool abtree::moveObject(int id, const bbox2 &box, const vec2 &displacement)
 	m_nodes[id].moved = true;
 
 	return true;
+}
+
+bbox2 getFattenBBox(int id) const
+{
+	LSPE_ASSERT(id >= 0 && id < m_capacity);
+	LSPE_ASSERT(m_nodes[id].isLeaf());
+
+	bbox2 box = m_nodes[id].box;
+
+	return { box.lower - m_extension, box.upper + m_extension };
+}
+
+void* abtree::getUserdata(int id) const
+{
+	LSPE_ASSERT(id >= 0 && id < m_capacity);
+	LSPE_ASSERT(m_nodes[id].isLeaf());
+
+	return m_nodes[id].userdata;
+}
+
+bool abtree::wasMoved(int id)
+{
+	LSPE_ASSERT(id >= 0 && id < m_capacity);
+	LSPE_ASSERT(m_nodes[id].isLeaf());
+
+	return m_nodes[id].moved;
+}
+
+void abtree::setUnMoved(int id)
+{
+	LSPE_ASSERT(id >= 0 && id < m_capacity);
+	LSPE_ASSERT(m_nodes[id].isLeaf());
+
+	m_nodes[id].moved = false;
 }
 
 void abtree::query(

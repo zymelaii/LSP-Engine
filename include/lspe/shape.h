@@ -10,7 +10,23 @@
 namespace lspe
 {
 
-typedef void* Shape;
+enum ShapeType
+{
+	eNull = -1,
+	eLine,
+	eCircle,
+	ePolygen,
+	eEllipse,
+	eBezier2,
+	eBezier3,
+	eUserType
+};
+
+struct Shape
+{
+	void     *data;
+	ShapeType type;
+};
 
 namespace shape
 {

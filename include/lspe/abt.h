@@ -46,6 +46,8 @@ struct node
 						 //! act as a abtree node when current node is valid
 		int next;        //! point to next available free node
 						 //! act as a linked list node when current node is free
+		int index;       //! index of this node
+		                 //! this is only available in query function
 	};
 	int left, right;     //! children (index)
 
@@ -67,19 +69,30 @@ public:
 	abtree();
 	~abtree();
 
-	void setExtension(float r); //! set extension of bounding box
+	void setExtension(float r);
+		//! set extension of bounding box
 
 	int addObject(const bbox2 &box, void *userdata);
 		//! add a new object with a bounding box
 		//! providing an optional userdata param (usually real object pointer)
+
 	void delObject(int id);
 		//! delete the object by id (given by addObject())
+
 	bool moveObject(int id, const bbox2 &box, const vec2 &displacement);
 		//! update bounding box of the object and apply the displacement
 		//! it'll adjust the bounding box and reinsert the object if the
 		//! result was out of the original fatten bounding box
 		//! return true if object was reinserted
 		//! otherwise return false
+
+	bbox2 getFattenBBox(int id) const;
+
+	void* getUserdata(int id) const;
+
+	bool wasMoved(int id);
+	void setUnMoved(int id);
+		//! clear move flag of the node
 
 	void query(abt::fnvisit processor,
 		const bbox2 &box, void *extra = nullptr);

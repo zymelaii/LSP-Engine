@@ -13,8 +13,7 @@ struct BodyConfig
 
 	//! geometrical shape of body
 
-	Shape *shape;    //! shape data pointer
-	int    bodyType; //! type of body shape
+	Shape shape; //! shape of body
 
 	//! attributes of movements
 
@@ -36,12 +35,11 @@ struct BodyConfig
 
 	//! interaction configs
 
-	bool allowSleep;    //! does this body allow sleeping ?
+	bool enabled;       //!   is this body enabled ?
 	bool awake;         //!   is this body weak or sleeping ?
+	bool allowSleep;    //! does this body allow sleeping ?
 	bool fixedRotation; //! does this body allow extra rotation ?
 	bool enableCCD;     //! does this body require continuous collision detection ?
-	bool active;        //!   is this body active ?
-	bool enabled;       //!   is this body enabled ?
 
 	//! user data
 
