@@ -1,8 +1,13 @@
 #include <float.h>
+#include <algorithm>
 #include <lspe/collision.h>
 
 namespace lspe
 {
+
+static inline vec2 perpendicularFromOrigin(vec2 a, vec2 b);
+bool processSimplex2(vec2 &direction, vec2 *simplex);
+bool processSimplex3(vec2 &direction, vec2 *simplex);
 
 namespace collision
 {
@@ -81,15 +86,302 @@ vec2 supportBezier3(Shape x, const vec2 &direction)
 
 };
 
-static inline vec2 perpendicularFromOrigin(vec2 a, vec2 b);
-bool processSimplex2(vec2 &direction, vec2 *simplex);
-bool processSimplex3(vec2 &direction, vec2 *simplex);
-
 using namespace collision;
+
+Arbiter::Arbiter(Collider *collider, size_t maxIter)
+	: active(false), collided(false), epsilon(0.01f)
+{
+
+#ifdef DEBUG
+	maxIteration = maxIter;
+#else
+	maxIteration = maxIter > 4 ? maxIter : 4;
+#endif
+
+	if (collider != nullptr)
+	{
+		if (collider->tested && collider->iscollided)
+		{
+			active = true;
+		}
+	}
+
+	M.reserve(maxIteration);
+	E.reserve(maxIteration);
+	I.reserve(maxIteration);
+
+	if (active)
+	{
+		setCollider(collider);
+	}
+}
+
+Arbiter::~Arbiter()
+{
+
+}
+
+void Arbiter::setEps(float eps)
+{
+	LSPE_ASSERT(eps > FLT_EPSILON);
+	epsilon = eps;
+}
+
+bool Arbiter::isActive() const
+{
+	return active;
+}
+
+bool Arbiter::isCollided() const
+{
+	return collided;
+}
+
+void Arbiter::getPenetration(
+	vec2 *penetrationVector) const
+{
+	if (active && collided)
+	{
+		if (penetrationVector != nullptr)
+		{
+			*penetrationVector =
+				penetration.normal * penetration.distance;
+		}
+	}
+}
+
+void Arbiter::getPenetration(
+	vec2 *normal, float *distance) const
+{
+	if (active && collided)
+	{
+		if (normal != nullptr)
+		{
+			*normal = penetration.normal;
+		}
+
+		if (distance != nullptr)
+		{
+			*distance = penetration.distance;
+		}
+	}
+}
+
+void Arbiter::getClosetPoint(vec2 *a, vec2 *b) const
+{
+	if (active && collided)
+	{
+		if (a != nullptr)
+		{
+			*a = closetPoint[0];
+		}
+		
+		if (b != nullptr)
+		{
+			*b = closetPoint[1];
+		}
+	}
+}
+
+bool Arbiter::perform()
+{
+	if (!active)
+	{	//! Arbiter hasn't binded a Collider yet
+		return false;
+	}
+
+	if (collided)
+	{	//! already performed
+		return true;
+	}
+
+	vec2 a, b;
+	vec2 v, v0;
+
+	a = M[E[I[0]].aId].point;
+	b = M[E[I[0]].bId].point;
+
+	v = perpendicularFromOrigin(a, b);
+
+	bool done = false;
+	size_t iteration = -1;
+	while (++iteration < maxIteration)
+	{
+		v0 = v;
+
+		vec2 direction = v.normalized();
+		vec2 A = support[0](shapes[0],  direction);
+		vec2 B = support[1](shapes[1], -direction);
+		vec2 P = A - B;
+
+		if (dot(direction, P) < 0)
+		{
+			LSPE_DEBUG(
+				"Arbiter Perform: "
+				"bad new Minkowski point "
+				"(P isn't on the expected direction)");
+			break;
+		}
+
+		if ((P - a).norm() + (b - P).norm() < epsilon)
+		{
+			LSPE_DEBUG(
+				"Arbiter Perform: "
+				"wead new Minkowski point "
+				"(points difference is within epsilon)");
+			done = true;
+			break;
+		}
+
+		//! as EPA finally generates a convex hull
+		//! P is supposed to break the edge constructed by a and b
+		//! new edges respectively constructed by a and P, P and b
+		//! will be orderly inserted into E
+
+		int n = M.size();
+		M.resize(n + 1);
+		E.resize(n + 1);
+		I.resize(n + 1);
+
+		M[n].point = P;
+		M[n].fromA = A;
+		M[n].fromB = B;
+
+		I[n] = n;
+
+		MetaEdge aP, Pb;
+
+		aP.aId = E[I[0]].aId;
+		aP.bId = n;
+		aP.perpDistance = perpendicularFromOrigin(
+			M[aP.aId].point, M[aP.bId].point).norm();
+
+		Pb.aId = n;
+		Pb.bId = E[I[0]].bId;
+		Pb.perpDistance = perpendicularFromOrigin(
+			M[Pb.aId].point, M[Pb.bId].point).norm();
+
+		E[I[0]] = aP;
+		E[I[n]] = Pb;
+
+		std::sort(I.begin(), I.end(), [this](int a, int b) {
+			return E[a].perpDistance < E[b].perpDistance;
+		});
+
+		a = M[E[I[0]].aId].point;
+		b = M[E[I[0]].bId].point;
+
+		if (dot(b - a, b - a) < FLT_EPSILON)
+		{
+			LSPE_DEBUG(
+				"Arbiter Perform: "
+				"next direction vector is approaching zero");
+			done = true;
+			break;
+		}
+
+		v = perpendicularFromOrigin(a, b);
+		if ((v - v0).norm() < epsilon)
+		{
+			LSPE_DEBUG(
+				"Arbiter Perform: "
+				"difference of penetration vector is within epsilon");
+			done = true;
+			break;
+		}
+	}
+
+	if (iteration >= maxIteration)
+	{
+		LSPE_DEBUG("Arbiter Perform: reach max interation");
+	}
+
+	if (done)
+	{
+		collided = true;
+		penetration.distance = v.norm();
+		penetration.normal = v.normalized();
+		getClosetPoint();
+
+		LSPE_DEBUG(
+			"Arbiter Perform: "
+			"penetration vector=(%f, %f) (iteration=%d)",
+			v.x, v.y, iteration);
+	} else
+	{
+		LSPE_DEBUG(
+			"Arbiter Perform FAILED! "
+			"(iterations >= %d)",
+			iteration);
+	}
+
+	return true;
+}
+
+void Arbiter::setCollider(Collider *collider)
+{
+	LSPE_ASSERT(collider != nullptr);
+	LSPE_ASSERT(collider->tested && collider->iscollided);
+
+	shapes[0]  = collider->shapes[0];
+	shapes[1]  = collider->shapes[1];
+	support[0] = collider->support[0];
+	support[1] = collider->support[1];
+
+	M.resize(3);
+	E.resize(3);
+	I.resize(3);
+
+	for (int i = 0; i < 3; ++i)
+	{
+		M[i].point = collider->simplex[i];
+		M[i].fromA = collider->fromA[i];
+		M[i].fromB = collider->fromB[i];
+
+		E[i].aId = i;
+		E[i].bId = (i + 1) % 3;
+
+		vec2 a = M[E[i].aId].point;
+		vec2 b = M[E[i].bId].point;
+
+		E[i].perpDistance = perpendicularFromOrigin(a, b).norm();
+
+		I[i] = i;
+	}
+
+	std::sort(I.begin(), I.end(), [this](int a, int b) {
+		return E[a].perpDistance < E[b].perpDistance;
+	});
+}
+
+void Arbiter::getClosetPoint()
+{
+	MetaPoint A = M[E[I[0]].aId];
+	MetaPoint B = M[E[I[0]].bId];
+
+	vec2 AB = B.point - A.point;
+	float sqab = dot(AB, AB);
+
+	if (sqab < FLT_EPSILON)
+	{
+		closetPoint[0] = A.point;
+		closetPoint[1] = A.point;
+	} else
+	{
+		float r = std::clamp(-dot(AB, A.point) / sqab, 0.0f, 1.0f);
+		closetPoint[0] = A.fromA * (1 - r) + B.fromA * r;
+		closetPoint[1] = A.fromB * (1 - r) + B.fromB * r;
+	}
+}
+
+void Arbiter::getContacts()
+{
+
+}
 
 Collider::Collider()
 	: tested(false), iscollided(false),
-	flag(0)
+	simplexIndex(-1), flag(0)
 {
 	shapes[0] = nullptr;
 	shapes[1] = nullptr;
@@ -109,7 +401,10 @@ vec2 perpendicularFromOrigin(vec2 a, vec2 b)
 
 	if (sqab < FLT_EPSILON)
 	{
-		LSPE_DEBUG("perpendicularFromOrigin: bad input line");
+		LSPE_DEBUG(
+			"perpendicularFromOrigin: "
+			"bad input line { (%f,%f), (%f,%f) }",
+			a.x, a.y, b.x, b.y);
 		return a;
 	} else
 	{
@@ -126,7 +421,6 @@ vec2 perpendicularFromOrigin(vec2 a, vec2 b)
  *
  *  @NOTES: apply GJK algorithm
  *******************************/
-
 bool Collider::collided()
 {
 	LSPE_ASSERT(flag == 0x1f);
@@ -138,13 +432,12 @@ bool Collider::collided()
 		LSPE_DEBUG("Collision Test: take (1, 0) as the first direction");
 	};
 
-	int n = 0;
-	simplex[n++] = support[0](shapes[0], d) - support[1](shapes[1], -d);
+	addSimplexPoint(d);
 
 	d = -d;
 
-	int iteration = 0;
-	while (iteration++ < 16)
+	int iteration = -1;
+	while (++iteration < 16)
 	{
 		if (dot(d, d) < FLT_EPSILON) //! <=> d.norm() == 0
 		{
@@ -154,24 +447,26 @@ bool Collider::collided()
 				iteration + 1);
 			tested = true;
 			iscollided = true;
-			LSPE_ASSERT(n == 3);
+			LSPE_ASSERT(simplexIndex == 2);
 			return iscollided;
 		}
 
-		simplex[n++] = support[0](shapes[0], d) - support[1](shapes[1], -d);
+		addSimplexPoint(d);
 
-		if (dot(simplex[n - 1], d) < 0)
+		if (dot(simplex[simplexIndex], d) < 0)
 		{
+#if 0
 			LSPE_DEBUG(
 				"Collision Test Result: "
 				"UNEXPECTED SIMPLEX POINT (iteration=%d)",
 				iteration + 1);
+#endif
 			tested = true;
 			iscollided = false;
 			return iscollided;
 		}
 
-		if (containOrigin(d, simplex, n))
+		if (simplexContainOrigin(d))
 		{
 			LSPE_DEBUG(
 				"Collision Test Result: "
@@ -179,17 +474,17 @@ bool Collider::collided()
 				iteration + 1);
 			tested = true;
 			iscollided = true;
-			LSPE_ASSERT(n == 3);
+			LSPE_ASSERT(simplexIndex == 2);
 			return iscollided;
 		}
 
-		if (n == 3)
+		if (simplexIndex == 2)
 		{
-			--n;
+			--simplexIndex;
 		}
 	}
 
-	LSPE_DEBUG("Collision Test FAILED! (iterations >= %d)", iteration - 1);
+	LSPE_DEBUG("Collision Test FAILED! (iterations >= %d)", iteration);
 	LSPE_DEBUG(
 		"LAST ITERATION: direction=(%f,%f); "
 		"Simplex={(%f,%f),(%f,%f),(%f,%f)};",
@@ -199,189 +494,6 @@ bool Collider::collided()
 		simplex[2].x, simplex[2].y);
 
 	return false;
-}
-
-/********************************
- *  @author: ZYmelaii
- *
- *  @Collider: Collider::computePenetration()
- *
- *  @brief: compute the penetration vector of
- *          the collided objects
- *
- *  @NOTES: apply EPA algorithm
- *******************************/
-vec2 Collider::computePenetration()
-{
-	LSPE_ASSERT(flag == 0x1f);
-	LSPE_ASSERT(tested);
-
-	//! adopt Expanding Polytope Algorithm (EPA)
-
-	//! Minkowski difference set
-	using MinkowskiDiffSet = std::vector<vec2>;
-
-	//! edges of Minkowski difference set
-	//! MetaEdge.edge = M[fromId[1]] - M[fromId[0]]
-	//! MetaEdge.distance = MetaEdge.edge.norm()
-	struct MetaEdge { vec2 edge; int fromId[2]; float distance; };
-	using Edges = std::vector<MetaEdge>;
-
-	//! indicies for MinkowskiDiffSet and Edges
-	//! let I = Indicies, E = Edges
-	//! then { E[I[i]] } is a sequence in descended by distance
-	using Indicies = std::vector<int>;
-
-	MinkowskiDiffSet M(3);
-	Edges E(3);
-	Indicies I(3);
-
-	//! add simplex points generated by GJK
-	M[0] = simplex[0];
-	M[1] = simplex[1];
-	M[2] = simplex[2];
-
-	//! initialize edges
-	E[0].fromId[0] = 0;
-	E[0].fromId[1] = 1;
-	
-	E[1].fromId[0] = 1;
-	E[1].fromId[1] = 2;
-	
-	E[2].fromId[0] = 2;
-	E[2].fromId[1] = 0;
-
-	E[0].edge = M[1] - M[0];
-	E[1].edge = M[2] - M[1];
-	E[2].edge = M[0] - M[2];
-
-	E[0].distance = perpendicularFromOrigin(M[E[0].fromId[0]], M[E[0].fromId[1]]).norm();
-	E[1].distance = perpendicularFromOrigin(M[E[1].fromId[0]], M[E[1].fromId[1]]).norm();
-	E[2].distance = perpendicularFromOrigin(M[E[2].fromId[0]], M[E[2].fromId[1]]).norm();
-
-	//! initialize indicies
-	I[0] = 0;
-	I[1] = 1;
-	I[2] = 2;
-
-	std::sort(I.begin(), I.end(), [E](int a, int b) {
-		return E[a].distance < E[b].distance;
-	});
-
-	//! calculate direction vector deviating from the origin
-	//! v0 restores the previous direction vector
-	vec2 a = M[E[I[0]].fromId[0]];
-	vec2 b = M[E[I[0]].fromId[1]];
-	vec2 v = perpendicularFromOrigin(a, b), v0;
-
-	const float epsilon = 0.01f;
-
-	const size_t maxIteration = 16;
-	size_t iteration = 0;
-	while (iteration++ < maxIteration)
-	{
-		v0 = v;
-
-		vec2 direction = v.normalized();
-		vec2 P = support[0](shapes[0], direction)
-			- support[1](shapes[1], -direction);
-
-		if (dot(direction, P) < 0)
-		{
-			LSPE_DEBUG(
-				"computePenetration: "
-				"bad new Minkowski point "
-				"(P isn't on the expected direction)");
-			v = { 0 , 0 };
-			break;
-		}
-
-		if ((P - a).norm() + (b - P).norm() < epsilon)
-		{
-			LSPE_DEBUG(
-				"computePenetration: "
-				"wead new Minkowski point "
-				"(points difference is within epsilon)");
-			break;
-		}
-
-		//! as EPA finally generates a convex hull
-		//! P is supposed to break the edge constructed by a and b
-		//! new edges respectively constructed by a and P, P and b
-		//! will be orderly inserted into E
-
-		M.push_back(P);
-
-		MetaEdge aP, Pb;
-
-		aP.edge      = P - a;
-		aP.fromId[0] = E[I[0]].fromId[0];
-		aP.fromId[1] = M.size() - 1;
-		aP.distance  = perpendicularFromOrigin(M[aP.fromId[0]], M[aP.fromId[1]]).norm();
-
-		Pb.edge      = b - P;
-		Pb.fromId[0] = M.size() - 1;
-		Pb.fromId[1] = E[I[0]].fromId[1];
-		Pb.distance  = perpendicularFromOrigin(M[Pb.fromId[0]], M[Pb.fromId[1]]).norm();
-
-		E[I[0]] = aP;
-		E.push_back(Pb);
-
-		int n = E.size() - 1;
-
-		I.push_back(n);
-
-		std::sort(I.begin(), I.end(), [E](int a, int b) {
-			return E[a].distance < E[b].distance;
-		});
-
-		//! update direction vector
-		a = M[E[I[0]].fromId[0]];
-		b = M[E[I[0]].fromId[1]];
-
-		if (dot(b - a, b - a) < FLT_EPSILON)
-		{
-			LSPE_DEBUG(
-				"computePenetration: "
-				"direction vector is approaching zero");
-			break;
-		}
-		v = perpendicularFromOrigin(a, b);
-
-		if ((v - v0).norm() < epsilon)
-		{
-			LSPE_DEBUG(
-				"computePenetration: "
-				"difference of penetration vector is within epsilon");
-			break;
-		}
-
-	};
-
-#ifdef DEBUG
-	if (iteration >= maxIteration)
-	{
-		LSPE_DEBUG("computePenetration: reach max interation");
-		v = { 0, 0 };
-	}
-#endif
-
-	LSPE_DEBUG(
-		"Compute Penetration Result: "
-		"(%f, %f) (iteration=%d)",
-		v.x, v.y, iteration - 1);
-
-	M.clear();
-	E.clear();
-	I.clear();
-
-	if (std::isnan(v.x) || std::isnan(v.y))
-	{
-		return { 0, 0 };
-	} else
-	{
-		return v;
-	}
 }
 
 void Collider::setTestPair(Shape a, Shape b)
@@ -437,6 +549,7 @@ void Collider::reset()
 {
 	tested = false;
 	iscollided = false;
+	simplexIndex = -1;
 }
 
 bool processSimplex2(vec2 &direction, vec2 *simplex)
@@ -485,9 +598,17 @@ bool processSimplex3(vec2 &direction, vec2 *simplex)
 	return false;
 }
 
-bool Collider::containOrigin(vec2 &direction, vec2 *simplex, int n)
+void Collider::addSimplexPoint(vec2 direction)
 {
-	switch (n)
+	++simplexIndex;
+	fromA[simplexIndex]   = support[0](shapes[0],  direction);
+	fromB[simplexIndex]   = support[1](shapes[1], -direction);
+	simplex[simplexIndex] = fromA[simplexIndex] - fromB[simplexIndex];
+}
+
+bool Collider::simplexContainOrigin(vec2 &direction)
+{
+	switch (simplexIndex + 1)
 	{
 		case 2: return processSimplex2(direction, simplex);
 		case 3: return processSimplex3(direction, simplex);

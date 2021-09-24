@@ -15,7 +15,6 @@ HEADERS:
   QOBJECT:
     - mainwidget.h
     - lspecanvas.h
-    - myshape.h
   STANDARD:
     - lspeman.h
     - stable.h
@@ -25,7 +24,6 @@ SOURCES:
   - mainwidget.cpp
   - lspecanvas.cpp
   - lspeman.cpp
-  - myshape.cpp
 
 FORMS:
   - mainwidget.ui

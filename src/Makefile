@@ -12,7 +12,7 @@ LIBS :=
 DIST := ${HOME}/build
 
 # CFLAGS := -O0 -pipe -fno-keep-inline-dllexport -fexceptions
-CFLAGS :=
+CFLAGS := -std=c++1z
 
 OBJECTS := vec.obj mat.obj \
 	bbox.obj abt.obj broadphase.obj \

@@ -45,7 +45,7 @@
 	- * [ ] Sweep and Prune
 2. - [ ] NarrowPhase
 	- * [ ] Support Shapes
-		- * [x] Line Segment
+		- * [ ] Line Segment
 		- * [ ] Ray
 		- * [ ] Straight Line 
 		- * [x] Circle
@@ -54,7 +54,7 @@
 		- * [ ] Quadratic Bézier Curve
 		- * [ ] Cubic Bézier Curve
 	- * [x] GJK
-	- * [ ] EPA
+	- * [x] EPA
 	- * [ ] MPR
 
 ***

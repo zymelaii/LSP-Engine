@@ -2,10 +2,10 @@
 
 #include <vector>
 
-#include "base/base.h"
-#include "base/vec.h"
-#include "base/mat.h"
-#include "bbox.h"
+#include "../lspe/base/base.h"
+#include "../lspe/base/vec.h"
+#include "../lspe/base/mat.h"
+#include "../lspe/bbox.h"
 
 namespace lspe
 {

@@ -11,8 +11,8 @@
  *          bbox2::upper indicates right-up
  *******************************/
 
-#include "base/base.h"
-#include "base/vec.h"
+#include "../lspe/base/base.h"
+#include "../lspe/base/vec.h"
 
 namespace lspe
 {

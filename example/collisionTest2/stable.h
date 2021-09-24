@@ -12,6 +12,7 @@
 #include <QDebug>
 #include <QPainter>
 #include <QMouseEvent>
+#include <QMessageBox>
 
 #include "lspeman.h"
 

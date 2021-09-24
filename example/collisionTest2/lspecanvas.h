@@ -2,7 +2,6 @@
 #define LSPECANVAS_H
 
 #include "stable.h"
-#include "myshape.h"
 
 namespace Ui {
 class LspeCanvas;

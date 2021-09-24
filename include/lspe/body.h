@@ -1,7 +1,53 @@
 #pragma once
 
+#include "../lspe/base/base.h"
+#include "../lspe/base/vec.h"
+#include "../lspe/base/mat.h"
+#include "../lspe/shape.h"
+
 namespace lspe
 {
+
+struct BodyConfig
+{
+
+	//! geometrical shape of body
+
+	Shape *shape;    //! shape data pointer
+	int    bodyType; //! type of body shape
+
+	//! attributes of movements
+
+	vec2  linearVelocity;  //! linear velocity of the centroid of this body
+	float angularVelocity; //! angular velocity this body
+
+	float linearDamping;   //! used to reduce the linear velocity
+	float angularDamping;  //! used to reduce the angular velocity
+
+	float gravityScale;    //! scale the gravity applied to this body
+
+	//! attributes of world
+
+	struct
+	{
+		vec2 location;
+		float angle;
+	} world;
+
+	//! interaction configs
+
+	bool allowSleep;    //! does this body allow sleeping ?
+	bool awake;         //!   is this body weak or sleeping ?
+	bool fixedRotation; //! does this body allow extra rotation ?
+	bool enableCCD;     //! does this body require continuous collision detection ?
+	bool active;        //!   is this body active ?
+	bool enabled;       //!   is this body enabled ?
+
+	//! user data
+
+	void *userdata; //! userdata pointer
+
+};
 
 class body
 {

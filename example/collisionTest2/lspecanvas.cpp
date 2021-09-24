@@ -60,6 +60,12 @@ void LspeCanvas::updateShouldDrawBBox(int status)
 
 void LspeCanvas::updateShouldRespondCollision(int status)
 {
+	if (status != 0)
+	{
+		QMessageBox::information(
+			this, "LSP-Engine Demo",
+			"这狗屎东西多多少少有点毛病，为了您的身心健康，我建议您再把它关上！");
+	}
 	enableResponse = status;
 }
 
@@ -83,7 +89,7 @@ void LspeCanvas::paintEvent(QPaintEvent *event)
 
 		painter->setRenderHint(QPainter::Antialiasing);
 
-		painter->setBrush(Qt::red);
+		painter->setBrush(QColor(255, 0, 0, 200));
 
 		for (auto obj : man->getObjects())
 		{
@@ -406,24 +412,31 @@ bool LspeCanvas::_query(const lspe::abt::node *node, void *extra)
 
 	if (p->index != q->index && collider->collided())
 	{
-		qDebug() << "Collision Test Results:"
-			<< stype[p->type] << "x" << stype[q->type]
-			<< "[" << p->index << ":" << q->index << "]";
+		lspe::Arbiter arbiter(collider, 64);
+		arbiter.setEps(0.1f);
 
-		lspe::vec2 v = collider->computePenetration();
-		painter->save();
-		painter->setPen(Qt::cyan);
-		painter->drawLine(
-			(p->box.lower.x + p->box.upper.x) / 2,
-			(p->box.lower.y + p->box.upper.y) / 2,
-			(p->box.lower.x + p->box.upper.x) / 2 + v.x,
-			(p->box.lower.y + p->box.upper.y) / 2 + v.y);
-		painter->restore();
+		LSPE_ASSERT(arbiter.isActive());
+		arbiter.perform();
 
-		auto lc = (LspeCanvas*)(qe->_this);
-		if (lc->hasCollisionResponse())
+		if (arbiter.isCollided())
 		{
-			lc->cancelPreStep();
+			qDebug() << "Collision Test Results:"
+				<< stype[p->type] << "x" << stype[q->type]
+				<< "[" << p->index << ":" << q->index << "]";
+
+			lspe::vec2 a, b;
+			arbiter.getClosetPoint(&a, &b);
+
+			painter->save();
+			painter->setPen(QPen(Qt::cyan, 2));
+			painter->drawLine(a.x, a.y, b.x, b.y);
+			painter->restore();
+
+			auto lc = (LspeCanvas*)(qe->_this);
+			if (lc->hasCollisionResponse())
+			{
+				lc->cancelPreStep();
+			}
 		}
 	}
 
@@ -447,7 +460,7 @@ lspeman* LspeCanvas::setup()
 
 	man->setBBoxExtension(4.0f);
 
-	man->newLine();
+	// man->newLine();
 
 	man->newPolygen();
 	man->newPolygen();

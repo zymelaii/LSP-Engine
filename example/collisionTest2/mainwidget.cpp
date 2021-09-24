@@ -7,7 +7,7 @@ MainWidget::MainWidget(QWidget *parent) :
 {
     ui->setupUi(this);
 
-    this->setWindowTitle("LSPE DEMO - Collision Test 2");
+    this->setWindowTitle("LSPE DEMO - Collision Test 2 | EPA");
 	this->setFixedSize(this->size());
 	this->setWindowFlags(this->windowFlags() &~ Qt::WindowMinMaxButtonsHint);
 
