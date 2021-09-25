@@ -23,6 +23,11 @@ bbox2 bboxOf(const Circle &x)
 	return { x.center - x.r, x.center + x.r };
 }
 
+void translate(Circle &x, const vec2 &displacement)
+{
+	x.center += displacement;
+}
+
 Circle rotationOf(float rotation, const Circle &x)
 {
 	LSPE_ASSERT(x.r > 0);
@@ -39,6 +44,12 @@ bool contain(const Circle &a, const vec2 &b)
 {
 	vec2 c = b - a.center;
 	return dot(c, c) < a.r * a.r;
+}
+
+float inertiaOf(const Circle &a, float mass)
+{
+	LSPE_ASSERT(mass > 0);
+	return mass * (a.r * a.r * 0.5 + dot(a.center, a.center));
 }
 
 };

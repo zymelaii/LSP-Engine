@@ -54,6 +54,14 @@ bbox2 bboxOf(const Polygen &x)
 	return { lower, upper };
 }
 
+void translate(Polygen &x, const vec2 &displacement)
+{
+	for (auto &e : x.vertices)
+	{
+		e += displacement;
+	}
+}
+
 Polygen rotationOf(float rotation, const Polygen &x)
 {
 	LSPE_ASSERT(x.vertices.size() >= 3);
@@ -97,6 +105,36 @@ bool contain(const Polygen &a, const vec2 &b)
 	}
 
 	return false;
+}
+
+float inertiaOf(const Polygen &a, float mass)
+{
+	LSPE_ASSERT(mass > 0);
+
+	float inertia = 0;
+	float area = 0;
+
+	for (int i = 0; i < a.vertices.size(); ++i)
+	{
+		vec2 u = a.vertices[i] - a.vertices[0];
+		vec2 v = a.vertices[(i + 1) % a.vertices.size()] - a.vertices[0];
+
+		float xIntegrate = u.x * u.x + v.x * u.x + v.x * v.x;
+		float yIntegrate = u.y * u.y + v.y * u.y + v.y * v.y;
+
+		float dArea = fabs(cross(u, v)) * 0.5;
+
+		inertia += (xIntegrate + yIntegrate) * dArea;
+		area +=  dArea;
+	}
+
+	inertia *= mass / area / 6;
+	
+	//! defaultly, the center of the polygen is its centroid
+	// centroid = ...;
+	// inertia += mass * dot(centroid, centroid) - dot(a.center, a.center);
+
+	return inertia;
 }
 
 };

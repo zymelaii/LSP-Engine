@@ -26,7 +26,7 @@ typedef void (*fnnewpair)(
  *******************************/
 class BroadPhase
 {
-public: friend BroadPhase::_query(const abt::node *node, void *extra);
+// public: friend BroadPhase::_query(const abt::node *node, void *extra);
 public:
 	BroadPhase();
 	~BroadPhase();
@@ -61,7 +61,7 @@ private:
 	int pairCapacity;
 	int pairCount;
 
-	static void _query(const abt::node *node, void *extra);
+	static bool _query(const abt::node *node, void *extra);
 		//! query callback for abtree query
 
 };

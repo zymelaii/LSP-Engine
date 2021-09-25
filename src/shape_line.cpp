@@ -21,6 +21,12 @@ bbox2 bboxOf(const Line &x)
 	return { lower, upper };
 }
 
+void translate(Line &x, const vec2 &displacement)
+{
+	x.pa += displacement;
+	x.pb += displacement;
+}
+
 Line rotationOf(float rotation, const Line &x)
 {
 	LSPE_ASSERT(x.type >= 0 && x.type <= 2);

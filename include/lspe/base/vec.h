@@ -20,6 +20,7 @@ struct vec3;
 
 static inline float dot   (const vec2 &a, const vec2 &b);
 static inline float cross (const vec2 &a, const vec2 &b);
+static inline vec2  cross (const vec2 &a, float b);
 
 static inline float dot   (const vec3 &a, const vec3 &b);
 static inline vec3  cross (const vec3 &a, const vec3 &b);
@@ -127,6 +128,11 @@ float dot(const vec2 &a, const vec2 &b)
 float cross(const vec2 &a, const vec2 &b)
 {
 	return a.x * b.y - a.y * b.x;
+}
+
+vec2 cross(const vec2 &a, float b)
+{
+	return { b * a.y, -b * a.x };
 }
 
 float dot(const vec3 &a, const vec3 &b)

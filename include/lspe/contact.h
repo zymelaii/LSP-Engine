@@ -3,4 +3,16 @@
 namespace lspe
 {
 
+class ContactInfo
+{
+public:
+	ContactInfo();
+	~ContactInfo();
+
+protected:
+
+private:
+
+};
+
 }

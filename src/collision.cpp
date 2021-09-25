@@ -16,7 +16,7 @@ using namespace lspe::shape;
 
 vec2 supportLine(Shape x, const vec2 &direction)
 {
-	LSPE_ASSERT(x.type == eLine);
+	LSPE_ASSERT(x.type == ShapeType::eLine);
 	auto p = (Line*)(x.data);
 	LSPE_ASSERT(p->type >= 0 && p->type <= 2);
 	LSPE_ASSERT(!(p->pa == p->pb));
@@ -29,7 +29,7 @@ vec2 supportLine(Shape x, const vec2 &direction)
 
 vec2 supportCircle(Shape x, const vec2 &direction)
 {
-	LSPE_ASSERT(x.type == eCircle);
+	LSPE_ASSERT(x.type == ShapeType::eCircle);
 	auto p = (Circle*)(x.data);
 	LSPE_ASSERT(p->r > 0);
 
@@ -38,7 +38,7 @@ vec2 supportCircle(Shape x, const vec2 &direction)
 
 vec2 supportPolygen(Shape x, const vec2 &direction)
 {
-	LSPE_ASSERT(x.type == ePolygen);
+	LSPE_ASSERT(x.type == ShapeType::ePolygen);
 	auto p = (Polygen*)(x.data);
 	LSPE_ASSERT(p->vertices.size() >= 3);
 
@@ -61,7 +61,7 @@ vec2 supportPolygen(Shape x, const vec2 &direction)
 
 vec2 supportEllipse(Shape x, const vec2 &direction)
 {
-	LSPE_ASSERT(x.type == eEllipse);
+	LSPE_ASSERT(x.type == ShapeType::eEllipse);
 	auto p = (Ellipse*)(x.data);
 	LSPE_ASSERT(p->rx > 0 && p->ry > 0);
 
@@ -76,7 +76,7 @@ vec2 supportEllipse(Shape x, const vec2 &direction)
 
 vec2 supportBezier2(Shape x, const vec2 &direction)
 {
-	LSPE_ASSERT(x.type == eBezier2);
+	LSPE_ASSERT(x.type == ShapeType::eBezier2);
 	auto p = (Bezier2*)(x.data);
 
 	return p->P[0];
@@ -84,7 +84,7 @@ vec2 supportBezier2(Shape x, const vec2 &direction)
 
 vec2 supportBezier3(Shape x, const vec2 &direction)
 {
-	LSPE_ASSERT(x.type == eBezier3);
+	LSPE_ASSERT(x.type == ShapeType::eBezier3);
 	auto p = (Bezier3*)(x.data);
 
 	return p->P[0];
@@ -389,8 +389,8 @@ Collider::Collider()
 	: tested(false), iscollided(false),
 	simplexIndex(-1), flag(0)
 {
-	shapes[0] = { nullptr, eNull };
-	shapes[1] = { nullptr, eNull };
+	shapes[0] = { nullptr, ShapeType::eNull };
+	shapes[1] = { nullptr, ShapeType::eNull };
 
 	getfirstdirection = nullptr;
 
@@ -504,13 +504,13 @@ bool Collider::collided()
 
 void Collider::setTestPair(Shape a, Shape b)
 {
-	if (a.type != eNull)
+	if (a.type != ShapeType::eNull)
 	{
 		shapes[0] = a;
 		flag |= 0x01;
 	}
 
-	if (b.type != eNull)
+	if (b.type != ShapeType::eNull)
 	{
 		shapes[1] = b;
 		flag |= 0x02;

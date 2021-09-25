@@ -10,8 +10,6 @@ namespace lspe
 namespace abt
 {
 
-static const int null = -1;
-
 bool novisit(const node *node, void *extra)
 {
 	return true;
@@ -257,7 +255,7 @@ bool abtree::moveObject(int id, const bbox2 &box, const vec2 &displacement)
 	return true;
 }
 
-bbox2 getFattenBBox(int id) const
+bbox2 abtree::getFattenBBox(int id) const
 {
 	LSPE_ASSERT(id >= 0 && id < m_capacity);
 	LSPE_ASSERT(m_nodes[id].isLeaf());

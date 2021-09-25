@@ -23,6 +23,8 @@ class abtree;
 namespace abt
 {
 
+static const int null = -1;
+
 enum { PREORDER, INORDER, POSTORDER };
 
 //! fnvisit allows a custom visit callback function

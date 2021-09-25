@@ -10,7 +10,7 @@
 namespace lspe
 {
 
-enum ShapeType
+enum class ShapeType
 {
 	eNull = -1,
 	eLine,
@@ -58,6 +58,13 @@ bbox2 bboxOf(const shape::Ellipse &x);
 bbox2 bboxOf(const shape::Bezier2 &x);
 bbox2 bboxOf(const shape::Bezier3 &x);
 
+void translate(shape::Line    &x, const vec2 &displacement);
+void translate(shape::Circle  &x, const vec2 &displacement);
+void translate(shape::Polygen &x, const vec2 &displacement);
+void translate(shape::Ellipse &x, const vec2 &displacement);
+void translate(shape::Bezier2 &x, const vec2 &displacement);
+void translate(shape::Bezier3 &x, const vec2 &displacement);
+
 shape::Line    rotationOf(float rotation, const shape::Line    &x);
 shape::Circle  rotationOf(float rotation, const shape::Circle  &x);
 shape::Polygen rotationOf(float rotation, const shape::Polygen &x);
@@ -75,6 +82,10 @@ shape::Bezier3 rotationOf(const mat2x2 &mat_rotation, const shape::Bezier3 &x);
 bool contain(const shape::Circle  &a, const vec2 &b);
 bool contain(const shape::Polygen &a, const vec2 &b);
 bool contain(const shape::Ellipse &a, const vec2 &b);
+
+float inertiaOf(const shape::Circle  &a, float mass);
+float inertiaOf(const shape::Polygen &a, float mass);
+float inertiaOf(const shape::Ellipse &a, float mass);
 
 namespace shape
 {

@@ -1,3 +1,4 @@
+#include <string.h>
 #include <lspe/broadphase.h>
 
 namespace lspe
@@ -13,7 +14,7 @@ BroadPhase::BroadPhase()
 	moveBuffer = (int*)malloc(moveCapacity * sizeof(int));
 	LSPE_ASSERT(moveBuffer != nullptr);
 
-	pairBuffer = (int*)malloc(pairCapacity * sizeof(int) * 2);
+	pairBuffer = (int(*)[2])malloc(pairCapacity * sizeof(int) * 2);
 	LSPE_ASSERT(pairBuffer != nullptr);
 }
 
@@ -35,7 +36,7 @@ int BroadPhase::addObject(const bbox2 &box, void *userdata)
 
 void BroadPhase::delObject(int id)
 {
-	delMove(index);
+	delMove(id);
 	tree.delObject(id);
 }
 
@@ -91,12 +92,7 @@ void BroadPhase::updatePairs(fnnewpair processor, void *extra)
 		if (queryId == abt::null) continue;
 
 		bbox2 box = tree.getFattenBBox(queryId);
-
-		_querywalker qw;
-		qw.thisptr  = this;
-		qw.tree     = &tree;
-
-		tree.query(_query, box, &qw);
+		tree.query(_query, box, this);
 	}
 
 	//! all things done
@@ -106,7 +102,7 @@ void BroadPhase::updatePairs(fnnewpair processor, void *extra)
 		queryId = moveBuffer[i];
 		if (queryId == abt::null) continue;
 
-		tree.setUnMoved(proxyId);
+		tree.setUnMoved(queryId);
 	}
 
 	moveCount = 0;
@@ -118,12 +114,12 @@ void BroadPhase::query(
 	tree.query(processor, box, extra);
 }
 
-void BroadPhase::_query(const abt::node *node, void *extra)
+bool BroadPhase::_query(const abt::node *node, void *extra)
 {
 	auto bp = (BroadPhase*)extra;
 	LSPE_ASSERT(bp != nullptr);
 
-	auto &tree = bp->queryId->tree;
+	auto &tree = bp->tree;
 
 	//! skip self
 	if (node->index == bp->queryId)
@@ -138,16 +134,16 @@ void BroadPhase::_query(const abt::node *node, void *extra)
 
 	if (bp->pairCount == bp->pairCapacity)
 	{
-		auto oldPiarBuffer = bp->pairBuffer;
+		auto oldPairBuffer = bp->pairBuffer;
 
 		bp->pairCapacity *= 2;
 		bp->pairBuffer = (int(*)[2])malloc(
 			bp->pairCapacity * sizeof(int) * 2);
-		LSPE_ASSERT(pairBuffer != nullptr);
+		LSPE_ASSERT(bp->pairBuffer != nullptr);
 
 		memcpy(bp->pairBuffer, oldPairBuffer,
 			bp->pairCount * sizeof(int) * 2);
-		free(oldPiarBuffer);
+		free(oldPairBuffer);
 	}
 
 	bp->pairBuffer[bp->pairCount][0]

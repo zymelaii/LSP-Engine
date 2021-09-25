@@ -25,6 +25,13 @@ bbox2 bboxOf(const Bezier2 &x)
 	return { lower, upper };
 }
 
+void translate(Bezier2 &x, const vec2 &displacement)
+{
+	x.P[0] += displacement;
+	x.P[1] += displacement;
+	x.P[2] += displacement;
+}
+
 Bezier2 rotationOf(float rotation, const Bezier2 &x)
 {
 	mat2x2 mat_rotation = getRotateMatrix(rotation);
@@ -60,6 +67,14 @@ bbox2 bboxOf(const Bezier3 &x)
 	upper.x = max(x.P[0].x, x.P[1].x, x.P[2].x, x.P[3].x);
 	upper.y = max(x.P[0].y, x.P[1].y, x.P[2].y, x.P[3].y);
 	return { lower, upper };
+}
+
+void translate(Bezier3 &x, const vec2 &displacement)
+{
+	x.P[0] += displacement;
+	x.P[1] += displacement;
+	x.P[2] += displacement;
+	x.P[3] += displacement;
 }
 
 Bezier3 rotationOf(float rotation, const Bezier3 &x)

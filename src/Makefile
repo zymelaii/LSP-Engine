@@ -17,12 +17,14 @@ CFLAGS := -std=c++1z
 OBJECTS := vec.obj mat.obj \
 	bbox.obj abt.obj broadphase.obj \
 	shape_line.obj shape_circle.obj shape_polygen.obj shape_ellipse.obj shape_bezier.obj \
-	collision.obj
+	collision.obj \
+	body.obj contacts.obj fixture.obj
 
 DOBJECTS := vec.dobj mat.dobj \
 	bbox.dobj abt.dobj broadphase.dobj \
 	shape_line.dobj shape_circle.dobj shape_polygen.dobj shape_ellipse.dobj shape_bezier.dobj \
-	collision.dobj
+	collision.dobj \
+	body.dobj contacts.dobj fixture.dobj
 
 %.obj: %.cpp
 	gcc ${INCS} ${LIBS} ${CFLAGS} -c -o $@ $<

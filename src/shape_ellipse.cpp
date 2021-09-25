@@ -27,6 +27,11 @@ bbox2 bboxOf(const Ellipse &x)
 	return { x.center - e, x.center + e };
 }
 
+void translate(Ellipse &x, const vec2 &displacement)
+{
+	x.center += displacement;
+}
+
 Ellipse rotationOf(float rotation, const Ellipse &x)
 {
 	LSPE_ASSERT(x.rx > 0 && x.ry > 0);
@@ -46,6 +51,13 @@ bool contain(const Ellipse &a, const vec2 &b)
 	vec2 c = mat_rotation * (b - a.center);
 	return c.x * c.x / (a.rx * a.rx)
 		+ c.y * c.y / (a.ry * a.ry) < 1;
+}
+
+//! I'm not sure whether the computation is right @ZYMelaii
+float inertiaOf(const Ellipse &a, float mass)
+{
+	LSPE_ASSERT(mass > 0);
+	return mass * (a.rx * a.ry * 0.5 + dot(a.center, a.center));
 }
 
 };
