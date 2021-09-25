@@ -42,9 +42,10 @@ public:
 	void newTriangleBody(const vec2 &a, const vec2 &b, const vec2 &c);
 	void newRectangleBody(bbox2 rect);
 
-	void  preSolve(float dt);
-	void   inSolve(float dt);
-	void postSolve(float dt);
+	void  preSolve(float dt); //! preprocess physics behavior
+	void   inSolve(float dt); //! solve complex physics phenomenon
+	                          //! exactly collision response in current version
+	void postSolve(float dt); //! apply all the results
 
 protected:
 
@@ -54,7 +55,13 @@ private:
 	Arbiter    arbiter;
 	Collider   collider;
 
+	//! RigidBody pointer may be used in other field
+	//! indices of RigidBody are expected to be of increasing order
 	std::vector<RigidBody*>  bodys;
+
+	//! contacts stored all the onCollsion bodys
+	//! in current version, we use default contact attributes
+	//! (except for penetration vector)
 	std::vector<DemoContact> contacts;
 
 	float step;

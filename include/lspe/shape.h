@@ -58,6 +58,8 @@ bbox2 bboxOf(const shape::Ellipse &x);
 bbox2 bboxOf(const shape::Bezier2 &x);
 bbox2 bboxOf(const shape::Bezier3 &x);
 
+static inline bbox2 bboxOf(Shape shape);
+
 void translate(shape::Line    &x, const vec2 &displacement);
 void translate(shape::Circle  &x, const vec2 &displacement);
 void translate(shape::Polygen &x, const vec2 &displacement);
@@ -149,5 +151,25 @@ struct Bezier3
 };
 
 };
+
+bbox2 bboxOf(Shape shape)
+{
+	switch (shape.type)
+	{
+		case ShapeType::eLine:    return bboxOf(*(shape::Line   *)(shape.data));
+		case ShapeType::eCircle:  return bboxOf(*(shape::Circle *)(shape.data));
+		case ShapeType::ePolygen: return bboxOf(*(shape::Polygen*)(shape.data));
+		case ShapeType::eEllipse: return bboxOf(*(shape::Ellipse*)(shape.data));
+		case ShapeType::eBezier2: return bboxOf(*(shape::Bezier2*)(shape.data));
+		case ShapeType::eBezier3: return bboxOf(*(shape::Bezier3*)(shape.data));
+		default:
+		{
+			LSPE_DEBUG(
+				"lspe::Shape: "
+				"user-defined shape type has no bboxOf function yet");
+			return { { 0, 0 }, { 0, 0 } };
+		}
+	}
+}
 
 };

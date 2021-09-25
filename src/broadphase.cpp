@@ -14,7 +14,7 @@ BroadPhase::BroadPhase()
 	moveBuffer = (int*)malloc(moveCapacity * sizeof(int));
 	LSPE_ASSERT(moveBuffer != nullptr);
 
-	pairBuffer = (int(*)[2])malloc(pairCapacity * sizeof(int) * 2);
+	pairBuffer = (IntPair*)malloc(pairCapacity * sizeof(IntPair));
 	LSPE_ASSERT(pairBuffer != nullptr);
 }
 
@@ -81,7 +81,7 @@ void BroadPhase::delMove(int id)
 	}
 }
 
-const int(*)[2] BroadPhase::getPairs(int *count) const
+const IntPair* BroadPhase::getPairs(int *count) const
 {
 	LSPE_ASSERT(count != nullptr);
 
@@ -146,18 +146,18 @@ bool BroadPhase::_query(const abt::node *node, void *extra)
 		auto oldPairBuffer = bp->pairBuffer;
 
 		bp->pairCapacity *= 2;
-		bp->pairBuffer = (int(*)[2])malloc(
-			bp->pairCapacity * sizeof(int) * 2);
+		bp->pairBuffer = (IntPair*)malloc(
+			bp->pairCapacity * sizeof(IntPair));
 		LSPE_ASSERT(bp->pairBuffer != nullptr);
 
 		memcpy(bp->pairBuffer, oldPairBuffer,
-			bp->pairCount * sizeof(int) * 2);
+			bp->pairCount * sizeof(IntPair));
 		free(oldPairBuffer);
 	}
 
-	bp->pairBuffer[bp->pairCount][0]
+	bp->pairBuffer[bp->pairCount].first
 		= min(bp->queryId, node->index);
-	bp->pairBuffer[bp->pairCount][1]
+	bp->pairBuffer[bp->pairCount].second
 		= max(bp->queryId, node->index);
 	++bp->pairCount;
 

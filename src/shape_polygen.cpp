@@ -153,7 +153,8 @@ float inertiaOf(const Polygen &a, float mass)
 	inertia *= mass / area / 6;
 	
 	//! defaultly, the center of the polygen is its centroid
-	// centroid = ...;
+
+	// centroid = centroidOf(a);
 	// inertia += mass * dot(centroid, centroid) - dot(a.center, a.center);
 
 	return inertia;

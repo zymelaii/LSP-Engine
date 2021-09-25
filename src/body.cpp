@@ -7,7 +7,7 @@ using namespace lspe::shape;
 
 RigidBodyProperty::RigidBodyProperty()
 {
-	type            = BodyType::eStatic;
+	type            = BodyType::eNull;
 	shape           = { nullptr, ShapeType::eNull };
 
 	linearVelocity  = { 0.0f, 0.0f };
@@ -31,9 +31,12 @@ RigidBodyProperty::RigidBodyProperty()
 }
 
 RigidBody::RigidBody()
-	: property()
+	: property(),
+	force(0, 0), torque(0.0f),
+	inertia(0.0f), inv_inertia(0.0f)
 {
-
+	setBodyType(BodyType::eStatic);
+	setMass(0);
 }
 
 RigidBody::~RigidBody()
@@ -45,10 +48,10 @@ void RigidBody::preUpdate(float dt)
 {
 	if (property.type == BodyType::eStatic) return;
 
-	property.linearVelocity += force * inv_mass * dt;
+	property.linearVelocity  += force * inv_mass * dt;
 	property.angularVelocity += torque * inv_inertia * dt;
 
-	property.linearVelocity *= 1.0f / (1.0f + property.linearDamping * dt);
+	property.linearVelocity  *= 1.0f / (1.0f + property.linearDamping * dt);
 	property.angularVelocity *= 1.0f / (1.0f + property.angularDamping * dt);
 }
 
@@ -107,9 +110,8 @@ void RigidBody::postUpdate(float dt)
 		{
 			LSPE_DEBUG(
 				"lspe::Body: "
-				"user-defined body type has no update function yet");
+				"user-defined shape type has no update function yet");
 		}
-		break;
 	}
 }
 
@@ -260,10 +262,15 @@ float RigidBody::getInertia() const
 
 void RigidBody::setMass(float mass)
 {
-	if (property.type != BodyType::eDynamic) return;
-
-	this->mass = mass <= FLT_EPSILON ? 1.0f : mass;
-	this->inv_mass = 1.0f / this->mass;
+	if (property.type == BodyType::eDynamic)
+	{
+		this->mass = mass <= FLT_EPSILON ? 1.0f : mass;
+		this->inv_mass = 1.0f / this->mass;
+	} else
+	{
+		this->mass     = Inf;
+		this->inv_mass = 0;
+	}
 }
 
 void RigidBody::setInertia(float inertia)

@@ -143,15 +143,21 @@ void Solver::newRectangleBody(bbox2 rect)
 
 void Solver::preSolve(float dt)
 {
-	
+	for (auto body : bodys)
+	{
+		body->preUpdate();
+	}
 }
 
 void Solver::inSolve(float dt)
 {
-
+	
 }
 
 void Solver::postSolve(float dt)
 {
-
+	for (auto body : bodys)
+	{
+		body->postUpdate();
+	}
 }

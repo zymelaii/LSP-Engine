@@ -13,6 +13,12 @@ namespace broadphase
 typedef void (*fnnewpair)(
 	void *firstData, void *secondData, void *extra);
 
+struct IntPair
+{
+	int first;
+	int second;
+};
+
 };
 
 /********************************
@@ -38,7 +44,7 @@ public:
 	void addMove(int id);
 	void delMove(int id);
 
-	const int(*)[2] getPairs(int *count) const;
+	const broadphase::IntPair* getPairs(int *count) const;
 	void updatePairs(broadphase::fnnewpair processor,
 		void *extra = nullptr);
 
@@ -61,7 +67,7 @@ private:
 	//! a pair is construct with (firstIndex, secondIndex)
 	//! and there always exists firstIndex > secondIndex
 	//! and some optimization can be applied
-	int (*pairBuffer)[2];
+	broadphase::IntPair *pairBuffer;
 	int pairCapacity;
 	int pairCount;
 

@@ -164,7 +164,9 @@ private:
 		eEnableCCD     = 0x0010
 	};
 
-	float sleepTime;
+	float sleepTime; //! sleep time is accumulated inside
+	                 //! engine when perform updation
+	                 //! but not a real time timestamp
 
 	int32_t flags;
 
