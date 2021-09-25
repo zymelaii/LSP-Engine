@@ -3,6 +3,8 @@
 namespace lspe
 {
 
+using namespace lspe::shape;
+
 RigidBodyProperty::RigidBodyProperty()
 {
 	type            = BodyType::eStatic;
@@ -37,6 +39,78 @@ RigidBody::RigidBody()
 RigidBody::~RigidBody()
 {
 
+}
+
+void RigidBody::preUpdate(float dt)
+{
+	if (property.type == BodyType::eStatic) return;
+
+	property.linearVelocity += force * inv_mass * dt;
+	property.angularVelocity += torque * inv_inertia * dt;
+
+	property.linearVelocity *= 1.0f / (1.0f + property.linearDamping * dt);
+	property.angularVelocity *= 1.0f / (1.0f + property.angularDamping * dt);
+}
+
+void RigidBody::postUpdate(float dt)
+{
+	if (property.type == BodyType::eStatic) return;
+
+	vec2  displacement = property.linearVelocity * dt;
+	float rotation     = property.angularVelocity * dt;
+
+	switch (property.shape.type)
+	{
+		case ShapeType::eLine:
+		{
+			auto e = (Line*)(property.shape.data);
+			translate(*e, displacement);
+			doRotation(*e, rotation);
+		}
+		break;
+		case ShapeType::eCircle:
+		{
+			auto e = (Circle*)(property.shape.data);
+			translate(*e, displacement);
+			doRotation(*e, rotation);
+		}
+		break;
+		case ShapeType::ePolygen:
+		{
+			auto e = (Polygen*)(property.shape.data);
+			translate(*e, displacement);
+			doRotation(*e, rotation);
+		}
+		break;
+		case ShapeType::eEllipse:
+		{
+			auto e = (Ellipse*)(property.shape.data);
+			translate(*e, displacement);
+			doRotation(*e, rotation);
+		}
+		break;
+		case ShapeType::eBezier2:
+		{
+			auto e = (Bezier2*)(property.shape.data);
+			translate(*e, displacement);
+			doRotation(*e, rotation);
+		}
+		break;
+		case ShapeType::eBezier3:
+		{
+			auto e = (Bezier3*)(property.shape.data);
+			translate(*e, displacement);
+			doRotation(*e, rotation);
+		}
+		break;
+		default:
+		{
+			LSPE_DEBUG(
+				"lspe::Body: "
+				"user-defined body type has no update function yet");
+		}
+		break;
+	}
 }
 
 BodyType RigidBody::getBodyType() const

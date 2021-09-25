@@ -32,17 +32,36 @@ void translate(Ellipse &x, const vec2 &displacement)
 	x.center += displacement;
 }
 
-Ellipse rotationOf(float rotation, const Ellipse &x)
+void doRotation(Ellipse &x, float rotation)
 {
-	LSPE_ASSERT(x.rx > 0 && x.ry > 0);
-	return { x.center, rotation, x.rx, x.ry };
+	x.rotation += rotation;
 }
 
-Ellipse rotationOf(const mat2x2 &mat_rotation, const Ellipse &x)
+void doRotation(Ellipse &x, const mat2x2 &mat_rotation)
+{
+	x.rotation += acos(mat_rotation[0][0]);
+}
+
+Ellipse rotationOf(const Ellipse &x, float rotation)
 {
 	LSPE_ASSERT(x.rx > 0 && x.ry > 0);
-	float rotation = acos(mat_rotation[0][0]);
-	return { x.center, rotation, x.rx, x.ry };
+
+	Ellipse newEllipse(x);
+
+	doRotation(newEllipse, rotation);
+
+	return newEllipse;
+}
+
+Ellipse rotationOf(const Ellipse &x, const mat2x2 &mat_rotation)
+{
+	LSPE_ASSERT(x.rx > 0 && x.ry > 0);
+
+	Ellipse newEllipse(x);
+
+	doRotation(newEllipse, mat_rotation);
+
+	return newEllipse;
 }
 
 bool contain(const Ellipse &a, const vec2 &b)

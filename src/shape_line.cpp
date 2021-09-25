@@ -27,23 +27,46 @@ void translate(Line &x, const vec2 &displacement)
 	x.pb += displacement;
 }
 
-Line rotationOf(float rotation, const Line &x)
+void doRotation(Line &x, float rotation)
 {
 	LSPE_ASSERT(x.type >= 0 && x.type <= 2);
 	LSPE_ASSERT(!(x.pa == x.pb));
+
 	mat2x2 mat_rotation = getRotateMatrix(rotation);
-	return rotationOf(mat_rotation, x);
+	doRotation(x, mat_rotation);
 }
 
-Line rotationOf(const mat2x2 &mat_rotation, const Line &x)
+void doRotation(Line &x, const mat2x2 &mat_rotation)
+{
+	vec2 center = centroidOf(x);
+	x.pa = mat_rotation * (x.pa - center) + center;
+	x.pb = mat_rotation * (x.pb - center) + center;
+}
+
+Line rotationOf(const Line &x, float rotation)
 {
 	LSPE_ASSERT(x.type >= 0 && x.type <= 2);
 	LSPE_ASSERT(!(x.pa == x.pb));
-	vec2 center = centroidOf(x);
-	vec2 p[2];
-	p[0] = mat_rotation * (x.pa - center) + center;
-	p[1] = mat_rotation * (x.pb - center) + center;
-	return { p[0], p[1], x.type, x.anchor };
+
+	mat2x2 mat_rotation = getRotateMatrix(rotation);
+
+	Line newLine(x);
+
+	doRotation(newLine, mat_rotation);
+
+	return newLine;
+}
+
+Line rotationOf(const Line &x, const mat2x2 &mat_rotation)
+{
+	LSPE_ASSERT(x.type >= 0 && x.type <= 2);
+	LSPE_ASSERT(!(x.pa == x.pb));
+
+	Line newLine(x);
+
+	doRotation(newLine, mat_rotation);
+
+	return newLine;
 }
 
 };

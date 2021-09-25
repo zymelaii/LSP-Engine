@@ -32,20 +32,39 @@ void translate(Bezier2 &x, const vec2 &displacement)
 	x.P[2] += displacement;
 }
 
-Bezier2 rotationOf(float rotation, const Bezier2 &x)
+void doRotation(Bezier2 &x, float rotation)
 {
 	mat2x2 mat_rotation = getRotateMatrix(rotation);
-	return rotationOf(mat_rotation, x);
+	doRotation(x, mat_rotation);
 }
 
-Bezier2 rotationOf(const mat2x2 &mat_rotation, const Bezier2 &x)
+void doRotation(Bezier2 &x, const mat2x2 &mat_rotation)
 {
 	vec2 center = centroidOf(x);
-	vec2 P[3];
-	P[0] = mat_rotation * (x.P[0] - center) + center;
-	P[1] = mat_rotation * (x.P[1] - center) + center;
-	P[2] = mat_rotation * (x.P[2] - center) + center;
-	return { P[0], P[1], P[2], x.step, x.anchor };
+
+	x.P[0] = mat_rotation * (x.P[0] - center) + center;
+	x.P[1] = mat_rotation * (x.P[1] - center) + center;
+	x.P[2] = mat_rotation * (x.P[2] - center) + center;
+}
+
+Bezier2 rotationOf(const Bezier2 &x, float rotation)
+{
+	mat2x2 mat_rotation = getRotateMatrix(rotation);
+
+	Bezier2 newBezier2(x);
+
+	doRotation(newBezier2, mat_rotation);
+
+	return newBezier2;
+}
+
+Bezier2 rotationOf(const Bezier2 &x, const mat2x2 &mat_rotation)
+{
+	Bezier2 newBezier2(x);
+
+	doRotation(newBezier2, mat_rotation);
+
+	return newBezier2;
 }
 
 vec2 centroidOf(const Bezier3 &x)
@@ -77,21 +96,40 @@ void translate(Bezier3 &x, const vec2 &displacement)
 	x.P[3] += displacement;
 }
 
-Bezier3 rotationOf(float rotation, const Bezier3 &x)
+void doRotation(Bezier3 &x, float rotation)
 {
 	mat2x2 mat_rotation = getRotateMatrix(rotation);
-	return rotationOf(mat_rotation, x);
+	doRotation(x, mat_rotation);
 }
 
-Bezier3 rotationOf(const mat2x2 &mat_rotation, const Bezier3 &x)
+void doRotation(Bezier3 &x, const mat2x2 &mat_rotation)
 {
 	vec2 center = centroidOf(x);
-	vec2 P[4];
-	P[0] = mat_rotation * (x.P[0] - center) + center;
-	P[1] = mat_rotation * (x.P[1] - center) + center;
-	P[2] = mat_rotation * (x.P[2] - center) + center;
-	P[3] = mat_rotation * (x.P[3] - center) + center;
-	return { P[0], P[1], P[2], P[3], x.step, x.anchor };
+
+	x.P[0] = mat_rotation * (x.P[0] - center) + center;
+	x.P[1] = mat_rotation * (x.P[1] - center) + center;
+	x.P[2] = mat_rotation * (x.P[2] - center) + center;
+	x.P[3] = mat_rotation * (x.P[3] - center) + center;
+}
+
+Bezier3 rotationOf(const Bezier3 &x, float rotation)
+{
+	mat2x2 mat_rotation = getRotateMatrix(rotation);
+
+	Bezier3 newBezier3(x);
+
+	doRotation(newBezier3, mat_rotation);
+
+	return newBezier3;
+}
+
+Bezier3 rotationOf(const Bezier3 &x, const mat2x2 &mat_rotation)
+{
+	Bezier3 newBezier3(x);
+
+	doRotation(newBezier3, mat_rotation);
+
+	return newBezier3;
 }
 
 };

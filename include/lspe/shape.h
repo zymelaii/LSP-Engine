@@ -65,19 +65,33 @@ void translate(shape::Ellipse &x, const vec2 &displacement);
 void translate(shape::Bezier2 &x, const vec2 &displacement);
 void translate(shape::Bezier3 &x, const vec2 &displacement);
 
-shape::Line    rotationOf(float rotation, const shape::Line    &x);
-shape::Circle  rotationOf(float rotation, const shape::Circle  &x);
-shape::Polygen rotationOf(float rotation, const shape::Polygen &x);
-shape::Ellipse rotationOf(float rotation, const shape::Ellipse &x);
-shape::Bezier2 rotationOf(float rotation, const shape::Bezier2 &x);
-shape::Bezier3 rotationOf(float rotation, const shape::Bezier3 &x);
+void doRotation(shape::Line    &x, float rotation);
+void doRotation(shape::Circle  &x, float rotation);
+void doRotation(shape::Polygen &x, float rotation);
+void doRotation(shape::Ellipse &x, float rotation);
+void doRotation(shape::Bezier2 &x, float rotation);
+void doRotation(shape::Bezier3 &x, float rotation);
 
-shape::Line    rotationOf(const mat2x2 &mat_rotation, const shape::Line    &x);
-shape::Circle  rotationOf(const mat2x2 &mat_rotation, const shape::Circle  &x);
-shape::Polygen rotationOf(const mat2x2 &mat_rotation, const shape::Polygen &x);
-shape::Ellipse rotationOf(const mat2x2 &mat_rotation, const shape::Ellipse &x);
-shape::Bezier2 rotationOf(const mat2x2 &mat_rotation, const shape::Bezier2 &x);
-shape::Bezier3 rotationOf(const mat2x2 &mat_rotation, const shape::Bezier3 &x);
+void doRotation(shape::Line    &x, const mat2x2 &mat_rotation);
+void doRotation(shape::Circle  &x, const mat2x2 &mat_rotation);
+void doRotation(shape::Polygen &x, const mat2x2 &mat_rotation);
+void doRotation(shape::Ellipse &x, const mat2x2 &mat_rotation);
+void doRotation(shape::Bezier2 &x, const mat2x2 &mat_rotation);
+void doRotation(shape::Bezier3 &x, const mat2x2 &mat_rotation);
+
+shape::Line    rotationOf(const shape::Line    &x, float rotation);
+shape::Circle  rotationOf(const shape::Circle  &x, float rotation);
+shape::Polygen rotationOf(const shape::Polygen &x, float rotation);
+shape::Ellipse rotationOf(const shape::Ellipse &x, float rotation);
+shape::Bezier2 rotationOf(const shape::Bezier2 &x, float rotation);
+shape::Bezier3 rotationOf(const shape::Bezier3 &x, float rotation);
+
+shape::Line    rotationOf(const shape::Line    &x, const mat2x2 &mat_rotation);
+shape::Circle  rotationOf(const shape::Circle  &x, const mat2x2 &mat_rotation);
+shape::Polygen rotationOf(const shape::Polygen &x, const mat2x2 &mat_rotation);
+shape::Ellipse rotationOf(const shape::Ellipse &x, const mat2x2 &mat_rotation);
+shape::Bezier2 rotationOf(const shape::Bezier2 &x, const mat2x2 &mat_rotation);
+shape::Bezier3 rotationOf(const shape::Bezier3 &x, const mat2x2 &mat_rotation);
 
 bool contain(const shape::Circle  &a, const vec2 &b);
 bool contain(const shape::Polygen &a, const vec2 &b);

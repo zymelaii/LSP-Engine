@@ -81,6 +81,14 @@ void BroadPhase::delMove(int id)
 	}
 }
 
+const int(*)[2] BroadPhase::getPairs(int *count) const
+{
+	LSPE_ASSERT(count != nullptr);
+
+	*count = pairCount;
+	return pairBuffer;
+}
+
 void BroadPhase::updatePairs(fnnewpair processor, void *extra)
 {
 	pairCount = 0;
@@ -127,7 +135,8 @@ bool BroadPhase::_query(const abt::node *node, void *extra)
 		return true;
 	}
 
-	if (tree.wasMoved(bp->queryId) && node->moved)
+	//! the pair exists or etc.
+	if (tree.wasMoved(bp->queryId) && bp->queryId < node->index)
 	{
 		return true;
 	}

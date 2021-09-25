@@ -28,15 +28,27 @@ void translate(Circle &x, const vec2 &displacement)
 	x.center += displacement;
 }
 
-Circle rotationOf(float rotation, const Circle &x)
+void doRotation(Circle &x, float rotation)
+{
+
+}
+
+void doRotation(Circle &x, const mat2x2 &mat_rotation)
+{
+	
+}
+
+Circle rotationOf(const Circle &x, float rotation)
 {
 	LSPE_ASSERT(x.r > 0);
+
 	return x;
 }
 
-Circle rotationOf(const mat2x2 &mat_rotation, const Circle &x)
+Circle rotationOf(const Circle &x, const mat2x2 &mat_rotation)
 {
 	LSPE_ASSERT(x.r > 0);
+
 	return x;
 }
 

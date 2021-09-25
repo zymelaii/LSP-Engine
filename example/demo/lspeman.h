@@ -13,9 +13,12 @@
 #include <lspe/shape.h>
 #include <lspe/collision.h>
 
+enum { LINE, CIRCLE, POLYGEN, ELLIPSE };
+
 struct Object
 {
 	lspe::Shape shape;
+	int type;
 	lspe::bbox2 box;
 	int index;
 };
@@ -28,7 +31,7 @@ public:
 	lspeman();
 	~lspeman();
 
-	static lspe::bbox2 bboxOf(lspe::Shape shape);
+	static lspe::bbox2 bboxOf(lspe::Shape shape, int type);
 
 	ObjectList& getObjects();
 
@@ -37,12 +40,13 @@ public:
 	void newPolygen();
 	void newEllipse();
 
-	void quickGenerate(lspe::Shape shape);
-	void translate(lspe::Shape shape, const lspe::vec2 &displacement);
+	void quickGenerate(lspe::Shape shape, int type);
+	void translate(lspe::Shape shape, int type, const lspe::vec2 &displacement);
 
-	int addObject(lspe::Shape shape, const lspe::bbox2 *pbb = nullptr);
+	int addObject(lspe::Shape shape, int type,
+		const lspe::bbox2 *pbb = nullptr);
 	void delObject(int oid);
-	void moveObject (int oid, const lspe::bbox2 &box,
+	void moveObject(int oid, const lspe::bbox2 &box,
 		const lspe::vec2 &displacement);
 
 	void setBBoxExtension(float r);
@@ -53,6 +57,8 @@ public:
 
 	void query(lspe::abt::fnvisit processor,
 		const lspe::bbox2 &box, void *extra = nullptr);
+	void query(lspe::abt::fnvisit processor,
+		const lspe::vec2 &point, void *extra = nullptr);
 
 	void stepforward(); //! customizable function
 

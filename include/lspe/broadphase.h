@@ -38,6 +38,7 @@ public:
 	void addMove(int id);
 	void delMove(int id);
 
+	const int(*)[2] getPairs(int *count) const;
 	void updatePairs(broadphase::fnnewpair processor,
 		void *extra = nullptr);
 
@@ -57,6 +58,9 @@ private:
 	int moveCount;
 
 	//! buffered all test pairs
+	//! a pair is construct with (firstIndex, secondIndex)
+	//! and there always exists firstIndex > secondIndex
+	//! and some optimization can be applied
 	int (*pairBuffer)[2];
 	int pairCapacity;
 	int pairCount;

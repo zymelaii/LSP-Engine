@@ -65,9 +65,13 @@
 
 ![Dynamic AABB Tree](./assets/example-abtree.png)
 
-> **Collision Detection**
+> **Collision Detection with GJK**
 
-![Collision Detection](./assets/example-collisionTest.png)
+![Collision Detection with GJK](./assets/example-collisionTest.png)
+
+> **Collision Detection with EPA**
+
+![Collision Detection with EPA](./assets/example-collisionTest2.png)
 
 ### Reference
 * **GitHub**

@@ -85,6 +85,9 @@ public:
 	RigidBody();
 	~RigidBody();
 
+	void preUpdate(float dt);
+	void postUpdate(float dt);
+
 	BodyType getBodyType() const;
 	Shape    getShape() const;
 

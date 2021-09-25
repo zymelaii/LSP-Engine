@@ -1,12 +1,11 @@
 #include "lspecanvas.h"
 #include "ui_lspecanvas.h"
 
-struct myQueryExtra { int last[2]; Object *obj; void *userdata; };
-myQueryExtra extra = { { -1, -1 }, nullptr, nullptr };
-
 LspeCanvas::LspeCanvas(QWidget *parent) :
     QWidget(parent), ui(new Ui::LspeCanvas),
-    man(nullptr), initialized(false)
+    man(nullptr), shouldDrawBBox(false), initialized(false),
+    ondrag(false), selection(nullptr),
+    shouldBack(false), enableResponse(false)
 {
     ui->setupUi(this);
 
@@ -30,8 +29,8 @@ LspeCanvas::~LspeCanvas()
 
 	delete man;
 	man = nullptr;
-    
-    delete ui;
+
+	delete ui;
 }
 
 void LspeCanvas::setInterval(int interval)
@@ -54,6 +53,11 @@ void LspeCanvas::render()
 	update();
 }
 
+void LspeCanvas::updateShouldDrawBBox(int status)
+{
+	shouldDrawBBox = status;
+}
+
 void LspeCanvas::paintEvent(QPaintEvent *event)
 {
 	if (initialized)
@@ -66,12 +70,15 @@ void LspeCanvas::paintEvent(QPaintEvent *event)
 		painter->setPen(Qt::blue);
 		painter->setBrush(Qt::NoBrush);
 
-		man->traverse((lspe::abt::fnvisit)visit, this, lspe::abt::POSTORDER);
+		if (shouldDrawBBox)
+		{
+			man->traverse((lspe::abt::fnvisit)visit, this, lspe::abt::POSTORDER);
+		}
 		// qDebug() << "Finish traverse(fnvisit, void*, int)";
 
 		painter->setRenderHint(QPainter::Antialiasing);
 
-		painter->setBrush(Qt::red);
+		painter->setBrush(QColor(255, 0, 0, 200));
 
 		for (auto obj : man->getObjects())
 		{
@@ -94,11 +101,11 @@ void LspeCanvas::paintEvent(QPaintEvent *event)
 void LspeCanvas::drawObject(Object *obj)
 {
 	using namespace lspe::shape;
-	switch (obj->shape.type)
+	switch (obj->type)
 	{
-		case lspe::ShapeType::eLine:
+		case LINE:
 		{
-			auto e = (Line*)(obj->shape.data);
+			auto e = (Line*)obj->shape;
 			painter->save();
 			painter->setPen(QPen(Qt::red, 2));
 			painter->drawLine(e->pa.x, e->pa.y, e->pb.x, e->pb.y);
@@ -109,9 +116,9 @@ void LspeCanvas::drawObject(Object *obj)
 			painter->restore();
 		}
 		break;
-		case lspe::ShapeType::eCircle:
+		case CIRCLE:
 		{
-			auto e = (Circle*)(obj->shape.data);
+			auto e = (Circle*)obj->shape;
 
 			// qDebug() << "draw Circle [" << obj->shape << "]: center=("
 			// 	<< e->center.x << "," << e->center.y << ") r =" << e->r;
@@ -125,9 +132,9 @@ void LspeCanvas::drawObject(Object *obj)
 			painter->restore();
 		}
 		break;
-		case lspe::ShapeType::ePolygen:
+		case POLYGEN:
 		{
-			auto e = (Polygen*)(obj->shape.data);
+			auto e = (Polygen*)obj->shape;
 			painter->drawRect(
 				e->vertices[0].x, e->vertices[0].y,
 				(e->vertices[2] - e->vertices[0]).x,
@@ -141,9 +148,9 @@ void LspeCanvas::drawObject(Object *obj)
 			painter->restore();
 		}
 		break;
-		case lspe::ShapeType::eEllipse:
+		case ELLIPSE:
 		{
-			auto e = (Ellipse*)(obj->shape.data);
+			auto e = (Ellipse*)obj->shape;
 
 			// qDebug() << "draw Ellipse [" << obj->shape << "]: center=("
 			// 	<< e->center.x << "," << e->center.y << ") r=("
@@ -168,87 +175,112 @@ void LspeCanvas::drawObject(Object *obj)
 	}
 }
 
-void LspeCanvas::query(Object *obj)
+bool querySelection(const lspe::abt::node *node, void *extra)
 {
-	extra.obj = obj;
-	extra.userdata = painter;
-	man->query([](const lspe::abt::node *node, void *extra)
-	-> bool {
-		using namespace lspe::shape;
+	using namespace lspe::shape;
 
-		char *stype[] = { "Line", "Circle", "Polygen", "Ellipse" };
-		auto e = (myQueryExtra*)extra;
-		auto p = e->obj;
-		auto q = (Object*)(node->userdata);
-		if (p->index != q->index)
+	struct QueryExtra
+	{
+		Object    **_selection;
+		bool       *_ondrag;
+		lspe::vec2 *_point;
+	};
+
+	auto  qe = (QueryExtra*)extra;
+	auto obj = (Object*)(node->userdata);
+
+	LSPE_DEBUG("Execute querySelection; target index=%d;", obj->index);
+
+	bool hit = false;
+	switch (obj->type)
+	{
+		case LINE:    hit = false; break;
+		case CIRCLE:  hit = lspe::contain(*(Circle *)(obj->shape), *qe->_point); break;
+		case POLYGEN: hit = lspe::contain(*(Polygen*)(obj->shape), *qe->_point); break;
+		case ELLIPSE: hit = lspe::contain(*(Ellipse*)(obj->shape), *qe->_point); break;
+		default: LSPE_ASSERT(false);
+	}
+
+	static const char *ShapeName[] = { "Circle", "Polygen", "Ellipse" };
+
+	if (hit)
+	{
+		LSPE_DEBUG("Execute querySelection: %s[%d] has been selected",
+			ShapeName[obj->type - CIRCLE],
+			obj->index);
+
+		*qe->_selection = obj;
+		*qe->_ondrag    = true;
+		return false;
+	}
+
+	LSPE_DEBUG("Execute querySelection: no selection");
+
+	return true;
+}
+
+void LspeCanvas::mousePressEvent(QMouseEvent *event)
+{
+	if (event->button() == Qt::LeftButton)
+	{
+		LSPE_ASSERT(!ondrag);
+
+		lspe::vec2 point(event->x(), event->y());
+		LSPE_DEBUG("Entry mousePressEvent: Point(%f,%f)",
+			point.x, point.y);
+
+		struct QueryExtra
 		{
-			lspe::collision::fnsupport supports[4] = {
-				lspe::collision::supportLine,
-				lspe::collision::supportCircle,
-				lspe::collision::supportPolygen,
-				lspe::collision::supportEllipse,
-			};
+			Object    **_selection;
+			bool       *_ondrag;
+			lspe::vec2 *_point;
+		} extra;
 
-			lspe::vec2 c1, c2;
-			switch (p->shape.type)
-			{
-				case lspe::ShapeType::eLine:
-					c1 = lspe::centroidOf(*(Line*)(p->shape.data));
-				break;
-				case lspe::ShapeType::eCircle:
-					c1 = ((Circle*)(p->shape.data))->center;
-				break;
-				case lspe::ShapeType::ePolygen:
-					c1 = lspe::centroidOf(*(Polygen*)(p->shape.data));
-				break;
-				case lspe::ShapeType::eEllipse:
-					c1 = ((Ellipse*)(p->shape.data))->center;
-				break;
-			}
-			switch (q->shape.type)
-			{
-				case lspe::ShapeType::eLine:
-					c2 = lspe::centroidOf(*(Line*)(q->shape.data));
-				break;
-				case lspe::ShapeType::eCircle:
-					c2 = ((Circle*)(q->shape.data))->center;
-				break;
-				case lspe::ShapeType::ePolygen:
-					c2 = lspe::centroidOf(*(Polygen*)(q->shape.data));
-				break;
-				case lspe::ShapeType::eEllipse:
-					c2 = ((Ellipse*)(q->shape.data))->center;
-				break;
-			}
-			lspe::vec2 firstdirection = c1 - c2;
+		extra._selection = &selection;
+		extra._ondrag    = &ondrag;
+		extra._point     = &point;
 
-			lspe::Collider collider;
-			collider.setTestPair(p->shape, q->shape);
-			collider.bindSupports(supports[p->shape.type], supports[q->shape.type]);
-			collider.bindInitialGenerator(
-				[](lspe::Shape, lspe::Shape, const lspe::vec2&, void *extra)
-				-> lspe::vec2 { return *(lspe::vec2*)extra; }
-			);
-			collider.bindExtraData((void*)&firstdirection);
+		man->query(querySelection, point, &extra);
 
-			if (collider.collided())
-			{
-				if (p->index == e->last[0] && q->index == e->last[1]
-					|| p->index == e->last[1] && q->index == e->last[0])
-				{
-
-				} else
-				{
-					qDebug() << "Collision Test Results:"
-						<< stype[p->shape.type] << "x" << stype[q->shape.type]
-						<< "[" << p->index << ":" << q->index << "]";
-					e->last[0] = p->index;
-					e->last[1] = q->index;
-				}
-			}
+		if (ondrag)
+		{
+			precoord = point;
 		}
-		return true;
-	}, obj->box, &extra);
+	}
+}
+
+void LspeCanvas::mouseMoveEvent(QMouseEvent *event)
+{
+	if (ondrag)
+	{
+		LSPE_ASSERT(selection != nullptr);
+
+		lspe::vec2 point(event->x(), event->y());
+
+		auto displacement = point - precoord;
+		man->moveObject(selection->index, selection->box, displacement);
+
+		if (enableResponse)
+		{
+			query(selection);
+			if (shouldBack)
+			{
+				man->moveObject(selection->index, selection->box, -displacement);
+				shouldBack = false;
+				LSPE_DEBUG("Drag Object: rejected movement");
+			} else
+			{
+				man->translate(selection->shape, selection->type, displacement);
+				precoord = point;
+			}
+		} else
+		{
+			man->translate(selection->shape, selection->type, displacement);
+			precoord = point;
+		}
+
+		update();
+	}
 }
 
 bool LspeCanvas::visit(lspe::abt::node *node, void *extra)
@@ -265,43 +297,19 @@ lspeman* LspeCanvas::setup()
 	auto man = new lspeman;
 
 	man->setBBoxExtension(4.0f);
-	qDebug() << "Set bbox2 extension =" << 4.0f;
 
-	{	//! Line
-		const size_t N = 4;
-		for (int i = 0; i < N; ++i)
-		{
-			man->newLine();
-		}
-		qDebug() << "Added" << N << "Lines";
-	}
+	// man->newLine();
 
-	{	//! CIRCLE
-		const size_t N = 4;
-		for (int i = 0; i < N; ++i)
-		{
-			man->newCircle();
-		}
-		qDebug() << "Added" << N << "Circles";
-	}
+	man->newPolygen();
+	man->newPolygen();
+	man->newPolygen();
+	man->newPolygen();
 
-	{	//! Polygen
-		const size_t N = 16;
-		for (int i = 0; i < N; ++i)
-		{
-			man->newPolygen();
-		}
-		qDebug() << "Added" << N << "Polygens";
-	}
+	man->newCircle();
+	man->newCircle();
 
-	{	//! Ellipse
-		const size_t N = 4;
-		for (int i = 0; i < N; ++i)
-		{
-			man->newEllipse();
-		}
-		qDebug() << "Added" << N << "Ellipses";
-	}
+	man->newEllipse();
+	man->newEllipse();
 
 	man->setStep(0.08f);
 

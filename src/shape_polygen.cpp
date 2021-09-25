@@ -62,22 +62,44 @@ void translate(Polygen &x, const vec2 &displacement)
 	}
 }
 
-Polygen rotationOf(float rotation, const Polygen &x)
+void doRotation(Polygen &x, float rotation)
 {
 	LSPE_ASSERT(x.vertices.size() >= 3);
+
 	mat2x2 mat_rotation = getRotateMatrix(rotation);
-	return rotationOf(mat_rotation, x);
+	doRotation(x, mat_rotation);
 }
 
-Polygen rotationOf(const mat2x2 &mat_rotation, const Polygen &x)
+void doRotation(Polygen &x, const mat2x2 &mat_rotation)
+{
+	for (auto &e : x.vertices)
+	{
+		e = mat_rotation * (e - x.center) + x.center;
+	}
+}
+
+Polygen rotationOf(const Polygen &x, float rotation)
 {
 	LSPE_ASSERT(x.vertices.size() >= 3);
-	std::vector<vec2> new_vertices(x.vertices.size());
-	for (int i = 0; i < x.vertices.size(); ++i)
-	{
-		new_vertices[i] = mat_rotation * (x.vertices[i] - x.center) + x.center;
-	}
-	return { x.center, new_vertices };
+
+	mat2x2 mat_rotation = getRotateMatrix(rotation);
+
+	Polygen newPolygen(x);
+
+	doRotation(newPolygen, mat_rotation);
+
+	return newPolygen;
+}
+
+Polygen rotationOf(const Polygen &x, const mat2x2 &mat_rotation)
+{
+	LSPE_ASSERT(x.vertices.size() >= 3);
+
+	Polygen newPolygen(x);
+
+	doRotation(newPolygen, mat_rotation);
+
+	return newPolygen;
 }
 
 bool contain(const Polygen &a, const vec2 &b)
