@@ -51,6 +51,8 @@ vec2 centroidOf(const shape::Ellipse &x);
 vec2 centroidOf(const shape::Bezier2 &x);
 vec2 centroidOf(const shape::Bezier3 &x);
 
+static inline vec2 centroidOf(Shape shape);
+
 bbox2 bboxOf(const shape::Line    &x);
 bbox2 bboxOf(const shape::Circle  &x);
 bbox2 bboxOf(const shape::Polygen &x);
@@ -151,6 +153,26 @@ struct Bezier3
 };
 
 };
+
+vec2 centroidOf(Shape shape)
+{
+	switch (shape.type)
+	{
+		case ShapeType::eLine:    return centroidOf(*(shape::Line   *)(shape.data));
+		case ShapeType::eCircle:  return centroidOf(*(shape::Circle *)(shape.data));
+		case ShapeType::ePolygen: return centroidOf(*(shape::Polygen*)(shape.data));
+		case ShapeType::eEllipse: return centroidOf(*(shape::Ellipse*)(shape.data));
+		case ShapeType::eBezier2: return centroidOf(*(shape::Bezier2*)(shape.data));
+		case ShapeType::eBezier3: return centroidOf(*(shape::Bezier3*)(shape.data));
+		default:
+		{
+			LSPE_DEBUG(
+				"lspe::Shape: "
+				"user-defined shape type has no centroidOf function yet");
+			return { 0, 0 };
+		}
+	}
+}
 
 bbox2 bboxOf(Shape shape)
 {

@@ -90,6 +90,7 @@
 	* [An Efficient Parallel Algorithm for Polygons Overlay Analysis](https://mdpi-res.com/d_attachment/applsci/applsci-09-04857/article_deploy/applsci-09-04857.pdf)
 	* [Proximity Queries and Penetration Depth Computation on 3D Game Objects](http://www.dtecta.com/papers/gdc2001depth.pdf)
 * **知乎**
+	* [2D 游戏物理引擎约束（一） - 碰撞约束](https://zhuanlan.zhihu.com/p/411876276)
 	* [游戏物理引擎(二) 碰撞检测之Broad-Phase](https://zhuanlan.zhihu.com/p/113415779)
 	* [游戏物理引擎(三) 碰撞检测之Narrow-Phase](https://zhuanlan.zhihu.com/p/127844705)
 	* [现代游戏物理引擎入门(三)——碰撞检测(上)](https://zhuanlan.zhihu.com/p/396719279)

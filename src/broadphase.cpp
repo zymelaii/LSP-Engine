@@ -89,7 +89,7 @@ const IntPair* BroadPhase::getPairs(int *count) const
 	return pairBuffer;
 }
 
-void BroadPhase::updatePairs(fnnewpair processor, void *extra)
+void BroadPhase::updatePairs()
 {
 	pairCount = 0;
 
@@ -114,6 +114,11 @@ void BroadPhase::updatePairs(fnnewpair processor, void *extra)
 	}
 
 	moveCount = 0;
+}
+
+void* BroadPhase::getUserdata(int id) const
+{
+	return tree.getUserdata(id);
 }
 
 void BroadPhase::query(

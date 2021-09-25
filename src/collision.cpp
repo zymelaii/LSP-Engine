@@ -118,7 +118,7 @@ Arbiter::Arbiter(Collider *collider, size_t maxIter)
 
 	if (active)
 	{
-		setCollider(collider);
+		resetCollider(collider);
 	}
 }
 
@@ -131,6 +131,42 @@ void Arbiter::setEps(float eps)
 {
 	LSPE_ASSERT(eps > FLT_EPSILON);
 	epsilon = eps;
+}
+
+void Arbiter::resetCollider(Collider *collider)
+{
+	LSPE_ASSERT(collider != nullptr);
+	LSPE_ASSERT(collider->tested && collider->iscollided);
+
+	shapes[0]  = collider->shapes[0];
+	shapes[1]  = collider->shapes[1];
+	support[0] = collider->support[0];
+	support[1] = collider->support[1];
+
+	M.resize(3);
+	E.resize(3);
+	I.resize(3);
+
+	for (int i = 0; i < 3; ++i)
+	{
+		M[i].point = collider->simplex[i];
+		M[i].fromA = collider->fromA[i];
+		M[i].fromB = collider->fromB[i];
+
+		E[i].aId = i;
+		E[i].bId = (i + 1) % 3;
+
+		vec2 a = M[E[i].aId].point;
+		vec2 b = M[E[i].bId].point;
+
+		E[i].perpDistance = perpendicularFromOrigin(a, b).norm();
+
+		I[i] = i;
+	}
+
+	std::sort(I.begin(), I.end(), [this](int a, int b) {
+		return E[a].perpDistance < E[b].perpDistance;
+	});
 }
 
 bool Arbiter::isActive() const
@@ -322,42 +358,6 @@ bool Arbiter::perform()
 	}
 
 	return true;
-}
-
-void Arbiter::setCollider(Collider *collider)
-{
-	LSPE_ASSERT(collider != nullptr);
-	LSPE_ASSERT(collider->tested && collider->iscollided);
-
-	shapes[0]  = collider->shapes[0];
-	shapes[1]  = collider->shapes[1];
-	support[0] = collider->support[0];
-	support[1] = collider->support[1];
-
-	M.resize(3);
-	E.resize(3);
-	I.resize(3);
-
-	for (int i = 0; i < 3; ++i)
-	{
-		M[i].point = collider->simplex[i];
-		M[i].fromA = collider->fromA[i];
-		M[i].fromB = collider->fromB[i];
-
-		E[i].aId = i;
-		E[i].bId = (i + 1) % 3;
-
-		vec2 a = M[E[i].aId].point;
-		vec2 b = M[E[i].bId].point;
-
-		E[i].perpDistance = perpendicularFromOrigin(a, b).norm();
-
-		I[i] = i;
-	}
-
-	std::sort(I.begin(), I.end(), [this](int a, int b) {
-		return E[a].perpDistance < E[b].perpDistance;
-	});
 }
 
 void Arbiter::getClosetPoint()

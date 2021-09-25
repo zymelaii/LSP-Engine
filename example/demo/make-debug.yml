@@ -1,4 +1,4 @@
-TARGET: collisionTest2
+TARGET: demo
 
 DIST: Debug
 
@@ -17,6 +17,7 @@ HEADERS:
     - lspecanvas.h
   STANDARD:
     - lspeman.h
+    - solver.h
     - stable.h
 
 SOURCES:
@@ -24,6 +25,7 @@ SOURCES:
   - mainwidget.cpp
   - lspecanvas.cpp
   - lspeman.cpp
+  - solver.cpp
 
 FORMS:
   - mainwidget.ui

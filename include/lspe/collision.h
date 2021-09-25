@@ -56,6 +56,8 @@ public:
 
 	void setEps(float eps);
 
+	void resetCollider(Collider *collider);
+
 	bool isActive() const;
 	bool isCollided() const;
 
@@ -70,7 +72,6 @@ public:
 	bool perform();
 
 protected:
-	void setCollider(Collider *collider);
 	void getClosetPoint();
 	void getContacts();
 
@@ -153,7 +154,7 @@ public:
 	//! call it before you perform a second test
 	void reset();
 
-private:
+protected:
 	//! add a point of simplex
 	void addSimplexPoint(vec2 direction);
 

@@ -45,8 +45,9 @@ public:
 	void delMove(int id);
 
 	const broadphase::IntPair* getPairs(int *count) const;
-	void updatePairs(broadphase::fnnewpair processor,
-		void *extra = nullptr);
+	void updatePairs();
+
+	void* getUserdata(int id) const;
 
 	void query(abt::fnvisit processor, const bbox2 &box, void *extra);
 		//! query function that calls abtree::query()

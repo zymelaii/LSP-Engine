@@ -24,8 +24,8 @@ SOURCES:
   - main.cpp
   - mainwidget.cpp
   - lspecanvas.cpp
-  - solver.cpp
   - lspeman.cpp
+  - solver.cpp
 
 FORMS:
   - mainwidget.ui

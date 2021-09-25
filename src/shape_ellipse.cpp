@@ -34,12 +34,12 @@ void translate(Ellipse &x, const vec2 &displacement)
 
 void doRotation(Ellipse &x, float rotation)
 {
-	x.rotation += rotation;
+	x.rotation = fmod(x.rotation + rotation, Pi * 2);
 }
 
 void doRotation(Ellipse &x, const mat2x2 &mat_rotation)
 {
-	x.rotation += acos(mat_rotation[0][0]);
+	x.rotation = fmod(x.rotation + acos(mat_rotation[0][0]), Pi * 2);
 }
 
 Ellipse rotationOf(const Ellipse &x, float rotation)

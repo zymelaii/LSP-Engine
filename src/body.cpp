@@ -32,6 +32,7 @@ RigidBodyProperty::RigidBodyProperty()
 
 RigidBody::RigidBody()
 	: property(),
+	centroid(0, 0),
 	force(0, 0), torque(0.0f),
 	inertia(0.0f), inv_inertia(0.0f)
 {
@@ -46,6 +47,8 @@ RigidBody::~RigidBody()
 
 void RigidBody::preUpdate(float dt)
 {
+	if (!isEnabled()) return;
+	if (!isAwake())   return;
 	if (property.type == BodyType::eStatic) return;
 
 	property.linearVelocity  += force * inv_mass * dt;
@@ -57,6 +60,8 @@ void RigidBody::preUpdate(float dt)
 
 void RigidBody::postUpdate(float dt)
 {
+	if (!isEnabled()) return;
+	if (!isAwake())   return;
 	if (property.type == BodyType::eStatic) return;
 
 	vec2  displacement = property.linearVelocity * dt;
@@ -142,7 +147,7 @@ void RigidBody::setBodyType(BodyType type)
 	torque = 0.0f;
 }
 
-const RigidBodyProperty& RigidBody::getProperty() const
+RigidBodyProperty& RigidBody::getProperty()
 {
 	return property;
 }
@@ -153,6 +158,7 @@ bool RigidBody::setShape(Shape shape)
 		&& shape.data != nullptr)
 	{
 		property.shape = shape;
+		centroid = centroidOf(property.shape);
 		return true;
 	}
 	return false;
@@ -185,7 +191,7 @@ void RigidBody::applyForce(vec2 force, vec2 point, bool wake)
 	if (flags & RigidBodyFlag::eAwake)
 	{
 		this->force += force;
-		this->torque += cross(point, force);
+		this->torque += cross(point - centroid, force);
 	}
 }
 
@@ -231,7 +237,8 @@ void RigidBody::applyLinearImpulse(vec2 linearImpulse, vec2 point, bool wake)
 	if (flags & RigidBodyFlag::eAwake)
 	{
 		property.linearVelocity += linearImpulse * inv_mass;
-		property.angularVelocity += cross(point, linearImpulse) * inv_inertia;
+		property.angularVelocity +=
+			cross(point - centroid, linearImpulse) * inv_inertia;
 	}
 }
 
@@ -248,6 +255,11 @@ void RigidBody::applyAngularImpulse(float angularImpulse, bool wake)
 	{
 		property.angularVelocity += angularImpulse * inv_inertia;
 	}
+}
+
+vec2 RigidBody::getCentroid() const
+{
+	return centroid;
 }
 
 float RigidBody::getMass() const

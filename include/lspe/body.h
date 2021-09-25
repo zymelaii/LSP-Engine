@@ -94,7 +94,7 @@ public:
 	void setBodyType(BodyType type);
 	bool    setShape(Shape shape);
 
-	const RigidBodyProperty& getProperty() const;
+	RigidBodyProperty& getProperty();
 
 	void applyForce2Center(vec2 force, bool wake);
 	void applyForce(vec2 force, vec2 point, bool wake);
@@ -103,13 +103,15 @@ public:
 	void applyLinearImpulse(vec2 linearImpulse, vec2 point, bool wake);
 	void applyAngularImpulse(float angularImpulse, bool wake);
 
+	vec2 getCentroid() const;
+
 	float    getMass() const;
 	float getInertia() const;
 
 	void setMass(float mass);
 	[[deprecated]] void setInertia(float inertia);
 /**
- *  FORBIDDEN: void setInertia(float inertia);
+ *  DEPRECATED: void setInertia(float inertia);
  *  NOTE: there isn't a simple universal algorithm to compute
  *  the inertia as it depends on the concrete shape.
  *  thus this quantity will be computed by the Shape itself
@@ -144,6 +146,8 @@ protected:
 
 private:
 	RigidBodyProperty property;
+
+	vec2 centroid;
 
 	float mass;
 	float inv_mass;    //! defaultly when inv_mass equals 0

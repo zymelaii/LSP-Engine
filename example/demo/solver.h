@@ -14,19 +14,36 @@ struct DemoContactEdge
 {
 	RigidBody *other;
 	DemoContact * contact;
+
+	vec2 crossPointFromCentroid[2];
 };
 
 struct DemoContact
 {
 	DemoContactEdge node[2];
 
-	int   indices[2];  //! for accessment to abtree
+	int indices[2];    //! for accessment to abtree
+
+	//! we assume that cost time of collision response
+	//! is extremly short
+	//! so no modification would be applied to
+	//! penetration vector
 
 	vec2  normal;      //! get from Arbiter
 	float penetration; //! get from Arbiter
 
+	const float maxPenetration = 0.02f;
+
 	float friction;    //! coefficient of friction
 	float restitution; //! coefficient of restitution
+
+	struct
+	{
+		float normal;
+		float tangent;
+	} force;           //! seperated by normal
+
+	uint32_t hash;     //! to check if two contacts is the same
 };
 
 class Solver
@@ -47,13 +64,16 @@ public:
 	                          //! exactly collision response in current version
 	void postSolve(float dt); //! apply all the results
 
+	static vec2 centerOf(Shape shape);
+
 protected:
+	static collision::fnsupport getDefaultSupport(ShapeType type);
 
 private:
 	BroadPhase bp;
 
-	Arbiter    arbiter;
-	Collider   collider;
+	Arbiter  arbiter;
+	Collider collider;
 
 	//! RigidBody pointer may be used in other field
 	//! indices of RigidBody are expected to be of increasing order
