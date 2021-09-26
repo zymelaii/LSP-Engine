@@ -14,6 +14,6 @@
 #include <QMouseEvent>
 #include <QMessageBox>
 
-#include "lspeman.h"
+#include "solver.h"
 
 #endif /* STABLE_H */

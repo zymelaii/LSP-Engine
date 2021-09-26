@@ -1,15 +1,17 @@
 #pragma once
 
+#include "../lspe/base/base.h"
+
 namespace lspe
 {
 
 //! customizable bit-masks of body
 struct bitmask
 {
-	int32_t category;    //! 类别掩码
-	int32_t contact;     //! 接触组掩码
-	int32_t collision;   //! 碰撞组掩码
-};               //! 实体掩码
+	int32_t category;  //! category bit mask
+	int32_t contact;   //! contact group bit mask
+	int32_t collision; //! collision group bit mask
+};                     //! bit masks designed for body
 
 class Fixture
 {

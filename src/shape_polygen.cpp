@@ -56,6 +56,7 @@ bbox2 bboxOf(const Polygen &x)
 
 void translate(Polygen &x, const vec2 &displacement)
 {
+	x.center += displacement;
 	for (auto &e : x.vertices)
 	{
 		e += displacement;

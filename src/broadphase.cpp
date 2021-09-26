@@ -13,9 +13,11 @@ BroadPhase::BroadPhase()
 {
 	moveBuffer = (int*)malloc(moveCapacity * sizeof(int));
 	LSPE_ASSERT(moveBuffer != nullptr);
+	memset(moveBuffer, 0, moveCapacity * sizeof(int));
 
 	pairBuffer = (IntPair*)malloc(pairCapacity * sizeof(IntPair));
 	LSPE_ASSERT(pairBuffer != nullptr);
+	memset(pairBuffer, 0, pairCapacity * sizeof(IntPair));
 }
 
 BroadPhase::~BroadPhase()
@@ -59,6 +61,7 @@ void BroadPhase::addMove(int id)
 		moveCapacity *= 2;
 		moveBuffer = (int*)malloc(moveCapacity * sizeof(int));
 		LSPE_ASSERT(moveBuffer != nullptr);
+		memset(moveBuffer, 0, moveCapacity * sizeof(int));
 
 		memcpy(moveBuffer, oldMoveBuffer, moveCount * sizeof(int));
 		free(oldMoveBuffer);
@@ -127,6 +130,11 @@ void BroadPhase::query(
 	tree.query(processor, box, extra);
 }
 
+void BroadPhase::traverse(abt::fnvisit visit, void *extra, int method)
+{
+	abt::traverse(&tree, visit, extra, method);
+}
+
 bool BroadPhase::_query(const abt::node *node, void *extra)
 {
 	auto bp = (BroadPhase*)extra;
@@ -154,6 +162,7 @@ bool BroadPhase::_query(const abt::node *node, void *extra)
 		bp->pairBuffer = (IntPair*)malloc(
 			bp->pairCapacity * sizeof(IntPair));
 		LSPE_ASSERT(bp->pairBuffer != nullptr);
+		memset(bp->pairBuffer, 0, bp->pairCapacity * sizeof(IntPair));
 
 		memcpy(bp->pairBuffer, oldPairBuffer,
 			bp->pairCount * sizeof(IntPair));

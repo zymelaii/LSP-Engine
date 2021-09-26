@@ -16,7 +16,6 @@ HEADERS:
     - mainwidget.h
     - lspecanvas.h
   STANDARD:
-    - lspeman.h
     - solver.h
     - stable.h
 
@@ -24,7 +23,6 @@ SOURCES:
   - main.cpp
   - mainwidget.cpp
   - lspecanvas.cpp
-  - lspeman.cpp
   - solver.cpp
 
 FORMS:

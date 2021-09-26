@@ -39,7 +39,7 @@ void traverse(abtree *tree, fnvisit visit,
 
 struct node
 {
-	bbox2 box;           //! bounding box (enlarged defaultly)
+	bbox2 box;           //! bounding box (expanded defaultly)
 	void *userdata;      //! available for user
 
 	union
@@ -54,7 +54,7 @@ struct node
 	int left, right;     //! children (index)
 
 	int height;          //! node height from the bottom of current sub-tree
-						 //! leaf node = 0, free node = -1
+						 //! normal node >= 0, free node = -1
 
 	bool moved;          //! mark if this bounding box was moved
 						 //! it indicates that the object has finished movement or placement

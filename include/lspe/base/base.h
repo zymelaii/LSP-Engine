@@ -14,6 +14,7 @@
 #include <cmath>
 #include <algorithm>
 #include <float.h>
+#include <stdint.h>
 
 #ifdef DEBUG
 #include <cstdio>

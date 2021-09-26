@@ -167,6 +167,9 @@ void Arbiter::resetCollider(Collider *collider)
 	std::sort(I.begin(), I.end(), [this](int a, int b) {
 		return E[a].perpDistance < E[b].perpDistance;
 	});
+
+	active = true;
+	collided = false;
 }
 
 bool Arbiter::isActive() const
@@ -217,7 +220,7 @@ void Arbiter::getClosetPoint(vec2 *a, vec2 *b) const
 		{
 			*a = closetPoint[0];
 		}
-		
+
 		if (b != nullptr)
 		{
 			*b = closetPoint[1];
@@ -354,7 +357,7 @@ bool Arbiter::perform()
 		LSPE_DEBUG(
 			"Arbiter Perform FAILED! "
 			"(iterations >= %d)",
-			iteration);
+			maxIteration);
 	}
 
 	return true;

@@ -24,7 +24,7 @@ struct _querywalker
 		bbox2 *testbox;
 		vec2  *testpoint;
 	};
-	bool    finished;
+	bool finished;
 };
 
 bool queryWalkerWithTestBox(const node *node, void *extra)
@@ -141,7 +141,7 @@ void traversePostorder(node *tree, int index, fnvisit visit, void *extra)
 
 bool node::isLeaf() const
 {
-	return left == null; //! or right == null
+	return left == null && right == null;
 }
 
 };

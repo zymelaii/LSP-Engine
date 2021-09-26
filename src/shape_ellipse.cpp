@@ -76,7 +76,7 @@ bool contain(const Ellipse &a, const vec2 &b)
 float inertiaOf(const Ellipse &a, float mass)
 {
 	LSPE_ASSERT(mass > 0);
-	return mass * (a.rx * a.ry * 0.5 + dot(a.center, a.center));
+	return mass * (a.rx * a.ry * 0.5);
 }
 
 };

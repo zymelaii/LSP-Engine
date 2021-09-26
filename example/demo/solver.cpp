@@ -3,25 +3,42 @@
 using namespace lspe::shape;
 using namespace lspe::collision;
 
-Solver::Solver(float _step)
-	: arbiter(nullptr),
-	bodys(16), contacts(16), step(_step)
+void freeShape(Shape shape)
 {
+	switch (shape.type)
+	{
+		case ShapeType::eLine:    delete (Line*)(shape.data);    break;
+		case ShapeType::eCircle:  delete (Circle*)(shape.data);  break;
+		case ShapeType::ePolygen: delete (Polygen*)(shape.data); break;
+		case ShapeType::eEllipse: delete (Ellipse*)(shape.data); break;
+		case ShapeType::eBezier2: delete (Bezier2*)(shape.data); break;
+		case ShapeType::eBezier3: delete (Bezier3*)(shape.data); break;
+	};
+}
 
+Solver::Solver(float _ratio, float _step)
+	: arbiter(nullptr),
+	bodys(16), contacts(16),
+	ratio(_ratio), step(_step)
+{
+	bodys.clear();
+	contacts.clear();
 }
 
 Solver::~Solver()
 {
-	for (auto body in bodys)
+	for (auto body : bodys)
 	{
-		delete body->getShape().data;
+		freeShape(body->getShape());
 		delete body;
 	}
 }
 
-void Solver::newCircleBody(const vec2 &center, float r)
+int Solver::newCircleBody(const vec2 &center, float r)
 {
 	Shape shape;
+
+	float invRatio = 1.0 / ratio;
 
 	auto e = new Circle;
 	e->center = center;
@@ -34,23 +51,34 @@ void Solver::newCircleBody(const vec2 &center, float r)
 	body->setShape(shape);
 	body->setBodyType(BodyType::eDynamic);
 
-	float area    = areaOf(*e);
-	float mass    = area * 1.0f;
-	float inertia = inertiaOf(*e, mass);
+	float area    = areaOf(*e) * invRatio * invRatio;
+	float mass    = area * invRatio;
+	float inertia = inertiaOf(*e, mass) * invRatio * invRatio;
 
 	body->setMass(mass);
 	body->setInertia(inertia);
+
+	bodys.push_back(body);
+
+	auto box = bboxOf(*e);
+
+	int id = bp.addObject(box, body);
+	body->getProperty().reserved = id;
+	return id;
 }
 
-void Solver::newPolygenBody()
+int Solver::newPolygenBody(std::vector<vec2> &vertices)
 {
-
+	return 0;
 }
 
-void Solver::newEllipseBody(const vec2 &center, float rx, float ry)
+int Solver::newEllipseBody(const vec2 &center, float rx, float ry)
 {
+	Shape shape;
+
+	float invRatio = 1.0 / ratio;
+
 	auto e = new Ellipse;
-
 	e->center = center;
 	e->rx = rx;
 	e->ry = ry;
@@ -60,29 +88,35 @@ void Solver::newEllipseBody(const vec2 &center, float rx, float ry)
 	e->center = centroid;
 
 	shape.data = e;
-	shape.type = ShapeType::Ellipse;
+	shape.type = ShapeType::eEllipse;
 
 	auto body = new RigidBody;
 	body->setShape(shape);
 	body->setBodyType(BodyType::eDynamic);
 
-	float area    = areaOf(*e);
-	float mass    = area * 1.0f;
-	float inertia = inertiaOf(*e, mass);
+	float area    = areaOf(*e) * invRatio * invRatio;
+	float mass    = area * invRatio;
+	float inertia = inertiaOf(*e, mass) * invRatio * invRatio;
 
 	body->setMass(mass);
 	body->setInertia(inertia);
 
+	bodys.push_back(body);
+
 	auto box = bboxOf(*e);
 
 	int id = bp.addObject(box, body);
-	body->getPenetration().userdata = static_cast<void*>(id);
+	body->getProperty().reserved = id;
+	return id;
 }
 
-void Solver::newTriangleBody(const vec2 &a, const vec2 &b, const vec2 &c)
+int Solver::newTriangleBody(const vec2 &a, const vec2 &b, const vec2 &c)
 {
-	auto e = new Polygen;
+	Shape shape;
 
+	float invRatio = 1.0 / ratio;
+
+	auto e = new Polygen;
 	e->vertices.resize(3);
 	e->vertices[0] = a;
 	e->vertices[1] = b;
@@ -98,23 +132,29 @@ void Solver::newTriangleBody(const vec2 &a, const vec2 &b, const vec2 &c)
 	body->setShape(shape);
 	body->setBodyType(BodyType::eDynamic);
 
-	float area    = areaOf(*e);
-	float mass    = area * 1.0f;
-	float inertia = inertiaOf(*e, mass);
+	float area    = areaOf(*e) * invRatio * invRatio;
+	float mass    = area * invRatio;
+	float inertia = inertiaOf(*e, mass) * invRatio * invRatio;
 
 	body->setMass(mass);
 	body->setInertia(inertia);
 
+	bodys.push_back(body);
+
 	auto box = bboxOf(*e);
 
 	int id = bp.addObject(box, body);
-	body->getPenetration().userdata = static_cast<void*>(id);
+	body->getProperty().reserved = id;
+	return id;
 }
 
-void Solver::newRectangleBody(bbox2 rect)
+int Solver::newRectangleBody(bbox2 rect)
 {
-	auto e = new Polygen;
+	Shape shape;
 
+	float invRatio = 1.0 / ratio;
+
+	auto e = new Polygen;
 	vec2 pa = rect.lower;
 	vec2 pc = rect.upper;
 	vec2 pb = { pa.x, pc.y };
@@ -136,28 +176,41 @@ void Solver::newRectangleBody(bbox2 rect)
 	body->setShape(shape);
 	body->setBodyType(BodyType::eDynamic);
 
-	float area    = areaOf(*e);
-	float mass    = area * 1.0f;
-	float inertia = inertiaOf(*e, mass);
+	float area    = areaOf(*e) * invRatio * invRatio;
+	float mass    = area * invRatio;
+	float inertia = inertiaOf(*e, mass) * invRatio * invRatio;
 
 	body->setMass(mass);
 	body->setInertia(inertia);
 
+	bodys.push_back(body);
+
 	auto box = bboxOf(*e);
 
 	int id = bp.addObject(box, body);
-	body->getPenetration().userdata = static_cast<void*>(id);
+	body->getProperty().reserved = id;
+	return id;
 }
 
-void Solver::preSolve(float dt)
+const std::vector<RigidBody*>& Solver::getObjects() const
+{
+	return bodys;
+}
+
+void* Solver::getUserdata(int id)
+{
+	return bp.getUserdata(id);
+}
+
+void Solver::preSolve()
 {
 	for (auto body : bodys)
 	{
-		body->preUpdate();
+		body->preUpdate(step);
 	}
 }
 
-void Solver::inSolve(float dt)
+void Solver::inSolve()
 {
 	bp.updatePairs();
 
@@ -170,8 +223,8 @@ void Solver::inSolve(float dt)
 	for (int i = 0; i < pairsCount; ++i)
 	{
 		RigidBody *bodys[2];
-		bodys[0] = (RigidBody*)bp.getUserData(pairs[i].first);
-		bodys[1] = (RigidBody*)bp.getUserData(pairs[i].second);
+		bodys[0] = (RigidBody*)bp.getUserdata(pairs[i].first);
+		bodys[1] = (RigidBody*)bp.getUserdata(pairs[i].second);
 
 		if (!(bodys[0]->getBodyType() == BodyType::eDynamic
 			&& bodys[1]->getBodyType() == BodyType::eDynamic))
@@ -183,9 +236,9 @@ void Solver::inSolve(float dt)
 			| (pairs[i].second & 0xffff);
 
 		auto it = std::find_if(
-			contacts.begin(), contacts.end(), []
-			(const DemoContact &a, const DemoContact &b){
-				return a.hash == b.hash;
+			contacts.begin(), contacts.end(), [hash]
+			(const DemoContact &a){
+				return a.hash == hash;
 			});
 
 		collider.reset();
@@ -207,36 +260,34 @@ void Solver::inSolve(float dt)
 
 		if (!collided)
 		{
-			LSPE_DEBUG(
-				"Collision Test: "
-				"end collision (%d, %d)",
-				(*it).indices[0],
-				(*it).indices[1]);
-
 			if (it != contacts.end())
 			{
+				LSPE_DEBUG(
+					"Collision Test: "
+					"(%d, %d) ended by Collider",
+					(*it).indices[0],
+					(*it).indices[1]);
+
 				contacts.erase(it);
 			}
-	
 			continue;
 		}
 
-		arbiter.setCollider(&collider);
+		arbiter.resetCollider(&collider);
 		arbiter.perform();
 
 		if (!arbiter.isCollided())
 		{
-			LSPE_DEBUG(
-				"Collision Test: "
-				"end collision (%d, %d)",
-				(*it).indices[0],
-				(*it).indices[1]);
-
 			if (it != contacts.end())
 			{
+				LSPE_DEBUG(
+					"Collision Test: "
+					"(%d, %d) ended by Collider",
+					(*it).indices[0],
+					(*it).indices[1]);
+
 				contacts.erase(it);
 			}
-
 			continue;
 		}
 
@@ -244,7 +295,7 @@ void Solver::inSolve(float dt)
 		{
 			LSPE_DEBUG(
 				"Collision Test: "
-				"stay collision (%d, %d)",
+				"Stay Collision (%d, %d)",
 				(*it).indices[0],
 				(*it).indices[1]);
 
@@ -268,7 +319,7 @@ void Solver::inSolve(float dt)
 		contact.indices[0] = pairs[i].first;
 		contact.indices[1] = pairs[i].second;
 
-		arbiter.getPenetration(&contact.normal, &arbiter.penetration);
+		arbiter.getPenetration(&contact.normal, &contact.penetration);
 
 		contact.friction    = 0.0f; //! defaultly smooth surface
 		contact.restitution = 1.0f; //! defaultly perfectly elastic collision
@@ -279,26 +330,57 @@ void Solver::inSolve(float dt)
 
 		LSPE_DEBUG(
 			"Collision Test: "
-			"begin collision (%d, %d)",
+			"Begin Collision (%d, %d)",
 			contact.indices[0],
 			contact.indices[1]);
 	}
 
 	for (auto &e : contacts)
 	{	//! apply collision response
-		
+		auto  a   = e.node[1].other;
+		auto  b   = e.node[0].other;
+		vec2  oa  = a->getCentroid();
+		vec2  ob  = b->getCentroid();
+		vec2  pa  = e.node[0].crossPointFromCentroid[0];
+		vec2  pb  = e.node[0].crossPointFromCentroid[1];
+		vec2  ra  = pa - oa;
+		vec2  rb  = pb - ob;
+		float wa  = a->getProperty().angularVelocity;
+		float wb  = b->getProperty().angularVelocity;
+		vec2  vpa = a->getProperty().linearVelocity + wa * ra;
+		vec2  vpb = b->getProperty().linearVelocity + wb * rb;
+		float ima = a->getInvMass();
+		float imb = b->getInvMass();
+		float iia = a->getInvInertia();
+		float iib = b->getInvInertia();
+		vec2  n   = e.normal;
+		float Mn  = 1.0 / (
+			  ima + cross(ra, n) * cross(ra, n) * iia
+			+ imb + cross(rb, n) * cross(rb, n) * iib);
+
+		float lambda = -dot(n, vpa - vpb) * Mn;
+
+		vec2 impulseForce = lambda * n * step;
+		LSPE_DEBUG("Apply Collision Impulse: (%f, %f) N*s", impulseForce.x, impulseForce.y);
+		a->applyLinearImpulse( impulseForce, ra, true);
+		b->applyLinearImpulse(-impulseForce, rb, true);
 	}
 }
 
-void Solver::postSolve(float dt)
+void Solver::postSolve()
 {
 	for (auto body : bodys)
 	{
-		body->postUpdate();
+		body->postUpdate(step);
 
-		int id = static_cast<int>(body->getProperty().userdata);
+		int id = body->getProperty().reserved;
 		bp.moveObject(id, bboxOf(body->getShape()), vec2(0, 0));
 	}
+}
+
+void Solver::traverse(abt::fnvisit visit, void *extra, int method)
+{
+	bp.traverse(visit, extra, method);
 }
 
 vec2 Solver::centerOf(Shape shape)
@@ -322,6 +404,11 @@ vec2 Solver::centerOf(Shape shape)
 	}
 }
 
+float Solver::getRatio() const
+{
+	return ratio;
+}
+
 fnsupport Solver::getDefaultSupport(ShapeType type)
 {
 	LSPE_ASSERT(type != ShapeType::eNull);
@@ -337,6 +424,7 @@ fnsupport Solver::getDefaultSupport(ShapeType type)
 			LSPE_DEBUG(
 				"Solver::getDefaultSupport: "
 				"user-defined shape type has no support function yet");
+			return 0L;
 		}
 	}
 }

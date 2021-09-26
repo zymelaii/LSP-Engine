@@ -51,6 +51,9 @@ public:
 
 	void query(abt::fnvisit processor, const bbox2 &box, void *extra);
 		//! query function that calls abtree::query()
+	void traverse(abt::fnvisit processor,
+		void *extra, int method = abt::PREORDER);
+		//! traverse abtree
 
 protected:
 

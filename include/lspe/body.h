@@ -74,7 +74,8 @@ struct RigidBodyProperty
 
 	//! user data
 
-	void *userdata; //! userdata pointer
+	void   *userdata; //! userdata pointer
+	int     reserved; //! userdata of int type
 
 };
 
@@ -105,8 +106,10 @@ public:
 
 	vec2 getCentroid() const;
 
-	float    getMass() const;
-	float getInertia() const;
+	float       getMass() const;
+	float    getInvMass() const;
+	float    getInertia() const;
+	float getInvInertia() const;
 
 	void setMass(float mass);
 	[[deprecated]] void setInertia(float inertia);

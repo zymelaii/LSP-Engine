@@ -18,16 +18,17 @@ RigidBodyProperty::RigidBodyProperty()
 
 	gravityScale    = 1.0f;
 
-	world.location = { 0.0f, 0.0f };
-	world.angle    = 0.0f;
+	world.location  = { 0.0f, 0.0f };
+	world.angle     = 0.0f;
 
-	enabled        = true;
-	awake          = true;
-	allowSleep     = true;
-	fixedRotation  = false;
-	enableCCD      = false;
+	enabled         = true;
+	awake           = true;
+	allowSleep      = true;
+	fixedRotation   = false;
+	enableCCD       = false;
 
-	userdata       = nullptr;
+	userdata        = nullptr;
+	reserved        = 0;
 }
 
 RigidBody::RigidBody()
@@ -141,6 +142,9 @@ void RigidBody::setBodyType(BodyType type)
 		property.linearVelocity  = { 0.0f, 0.0f };
 		property.angularVelocity = 0.0f;
 		flags &= ~RigidBodyFlag::eAwake;
+	} else
+	{
+		setAwake(true);
 	}
 
 	force  = { 0.0f, 0.0f };
@@ -168,7 +172,7 @@ void RigidBody::applyForce2Center(vec2 force, bool wake)
 {
 	if (property.type != BodyType::eDynamic) return;
 
-	if (wake && (flags & RigidBodyFlag::eAwake))
+	if (wake && (flags & RigidBodyFlag::eAwake) == 0)
 	{
 		setAwake(true);
 	}
@@ -183,7 +187,7 @@ void RigidBody::applyForce(vec2 force, vec2 point, bool wake)
 {
 	if (property.type != BodyType::eDynamic) return;
 
-	if (wake && (flags & RigidBodyFlag::eAwake))
+	if (wake && (flags & RigidBodyFlag::eAwake) == 0)
 	{
 		setAwake(true);
 	}
@@ -199,7 +203,7 @@ void RigidBody::applyTorque(float torque, bool wake)
 {
 	if (property.type != BodyType::eDynamic) return;
 
-	if (wake && (flags & RigidBodyFlag::eAwake))
+	if (wake && (flags & RigidBodyFlag::eAwake) == 0)
 	{
 		setAwake(true);
 	}
@@ -214,7 +218,7 @@ void RigidBody::applyLinearImpulse2Center(vec2 linearImpulse, bool wake)
 {
 	if (property.type != BodyType::eDynamic) return;
 
-	if (wake && (flags & RigidBodyFlag::eAwake))
+	if (wake && (flags & RigidBodyFlag::eAwake) == 0)
 	{
 		setAwake(true);
 	}
@@ -229,7 +233,7 @@ void RigidBody::applyLinearImpulse(vec2 linearImpulse, vec2 point, bool wake)
 {
 	if (property.type != BodyType::eDynamic) return;
 
-	if (wake && (flags & RigidBodyFlag::eAwake))
+	if (wake && (flags & RigidBodyFlag::eAwake) == 0)
 	{
 		setAwake(true);
 	}
@@ -246,7 +250,7 @@ void RigidBody::applyAngularImpulse(float angularImpulse, bool wake)
 {
 	if (property.type != BodyType::eDynamic) return;
 
-	if (wake && (flags & RigidBodyFlag::eAwake))
+	if (wake && (flags & RigidBodyFlag::eAwake) == 0)
 	{
 		setAwake(true);
 	}
@@ -267,9 +271,19 @@ float RigidBody::getMass() const
 	return mass;
 }
 
+float RigidBody::getInvMass() const
+{
+	return inv_mass;
+}
+
 float RigidBody::getInertia() const
 {
 	return inertia;
+}
+
+float RigidBody::getInvInertia() const
+{
+	return inv_inertia;
 }
 
 void RigidBody::setMass(float mass)

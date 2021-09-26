@@ -61,7 +61,7 @@ bool contain(const Circle &a, const vec2 &b)
 float inertiaOf(const Circle &a, float mass)
 {
 	LSPE_ASSERT(mass > 0);
-	return mass * (a.r * a.r * 0.5 + dot(a.center, a.center));
+	return mass * (a.r * a.r * 0.5);
 }
 
 };

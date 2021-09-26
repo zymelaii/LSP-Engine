@@ -7,14 +7,14 @@ MainWidget::MainWidget(QWidget *parent) :
 {
     ui->setupUi(this);
 
-    this->setWindowTitle("LSPE DEMO - Collision Test 2 | EPA");
+    this->setWindowTitle("LSPE DEMO - Solver");
 	this->setFixedSize(this->size());
 	this->setWindowFlags(this->windowFlags() &~ Qt::WindowMinMaxButtonsHint);
 
 	connect(ui->cbAABB, QCheckBox::stateChanged,
 		ui->canvas, LspeCanvas::updateShouldDrawBBox);
 
-	ui->canvas->setMouseTracking(true);
+	// ui->canvas->setMouseTracking(true);
 }
 
 MainWidget::~MainWidget()

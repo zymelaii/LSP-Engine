@@ -3,32 +3,26 @@
 
 LspeCanvas::LspeCanvas(QWidget *parent) :
     QWidget(parent), ui(new Ui::LspeCanvas),
-    man(nullptr), shouldDrawBBox(false), initialized(false),
-    ondrag(false), selection(nullptr),
-    shouldBack(false), enableResponse(false)
+    shouldDrawBBox(false), initialized(false),
+    solver(10, 0.01)
 {
     ui->setupUi(this);
-
-    man = setup();
-    LSPE_ASSERT(man != nullptr);
 
     tmRender = new QTimer(this);
     LSPE_ASSERT(tmRender != nullptr);
 
     connect(tmRender, &QTimer::timeout, this, render);
+
+    setup();
 }
 
 LspeCanvas::~LspeCanvas()
 {
 	LSPE_ASSERT(tmRender != nullptr);
-	LSPE_ASSERT(man != nullptr);
 
 	tmRender->stop();
 	delete tmRender;
 	tmRender = nullptr;
-
-	delete man;
-	man = nullptr;
 
 	delete ui;
 }
@@ -48,8 +42,9 @@ void LspeCanvas::start()
 
 void LspeCanvas::render()
 {
-	man->stepforward();
-	// qDebug() << "Finish stepforward()";
+	solver.preSolve();
+	solver.inSolve();
+	solver.postSolve();
 	update();
 }
 
@@ -62,8 +57,6 @@ void LspeCanvas::paintEvent(QPaintEvent *event)
 {
 	if (initialized)
 	{
-		// qDebug() << "Begin rendering";
-
 		QPainter tmp(this);
 		painter = &tmp;
 
@@ -72,19 +65,16 @@ void LspeCanvas::paintEvent(QPaintEvent *event)
 
 		if (shouldDrawBBox)
 		{
-			man->traverse((lspe::abt::fnvisit)visit, this, lspe::abt::POSTORDER);
+			solver.traverse(visit, this, lspe::abt::POSTORDER);
 		}
-		// qDebug() << "Finish traverse(fnvisit, void*, int)";
 
 		painter->setRenderHint(QPainter::Antialiasing);
 
 		painter->setBrush(QColor(255, 0, 0, 200));
 
-		for (auto obj : man->getObjects())
+		for (auto obj : solver.getObjects())
 		{
-			if (obj->index == -1) continue;
 			drawObject(obj);
-			query(obj);
 		}
 
 		painter->setPen(QPen(Qt::black, 8));
@@ -98,189 +88,69 @@ void LspeCanvas::paintEvent(QPaintEvent *event)
 	QWidget::paintEvent(event);
 }
 
-void LspeCanvas::drawObject(Object *obj)
+void LspeCanvas::drawObject(lspe::RigidBody *obj)
 {
 	using namespace lspe::shape;
-	switch (obj->type)
+
+	float ratio = solver.getRatio();
+
+	switch (obj->getShape().type)
 	{
-		case LINE:
+		case lspe::ShapeType::eLine:
 		{
-			auto e = (Line*)obj->shape;
+			auto e = (Line*)(obj->getShape().data);
 			painter->save();
 			painter->setPen(QPen(Qt::red, 2));
-			painter->drawLine(e->pa.x, e->pa.y, e->pb.x, e->pb.y);
-			painter->setPen(Qt::black);
-			auto center = lspe::centroidOf(*e);
-			painter->drawText(center.x, center.y,
-				QString::number(obj->index));
+			vec2 pa = e->pa;
+			vec2 pb = e->pb;
+			painter->drawLine(pa.x, pa.y, pb.x, pb.y);
 			painter->restore();
 		}
 		break;
-		case CIRCLE:
+		case lspe::ShapeType::eCircle:
 		{
-			auto e = (Circle*)obj->shape;
-
-			// qDebug() << "draw Circle [" << obj->shape << "]: center=("
-			// 	<< e->center.x << "," << e->center.y << ") r =" << e->r;
-
+			auto e = (Circle*)(obj->getShape().data);
+			vec2 center = e->center;
+			float r = e->r;
 			painter->drawEllipse(
-				e->center.x - e->r, e->center.y - e->r, e->r * 2, e->r * 2);
-			painter->save();
-			painter->setPen(Qt::black);
-			painter->drawText(e->center.x, e->center.y,
-				QString::number(obj->index));
-			painter->restore();
+				center.x - r, center.y - r, r * 2, r * 2);
 		}
 		break;
-		case POLYGEN:
+		case lspe::ShapeType::ePolygen:
 		{
-			auto e = (Polygen*)obj->shape;
-			painter->drawRect(
-				e->vertices[0].x, e->vertices[0].y,
-				(e->vertices[2] - e->vertices[0]).x,
-				(e->vertices[2] - e->vertices[0]).y);
-			// painter->drawPolygon(
-			// 	(QPointF*)&e->vertices[0], e->vertices.size());
-			painter->save();
-			painter->setPen(Qt::black);
-			painter->drawText(e->center.x, e->center.y,
-				QString::number(obj->index));
-			painter->restore();
-		}
-		break;
-		case ELLIPSE:
-		{
-			auto e = (Ellipse*)obj->shape;
-
-			// qDebug() << "draw Ellipse [" << obj->shape << "]: center=("
-			// 	<< e->center.x << "," << e->center.y << ") r=("
-			// 	<< e->rx << "," << e->ry << ") rotation ="
-			// 	<< e->rotation / lspe::Pi * 180 << "degree";
-
-			painter->translate(e->center.x, e->center.y);
-			painter->rotate(e->rotation / lspe::Pi * 180);
-			painter->translate(-e->center.x, -e->center.y);
-			painter->drawEllipse(
-				e->center.x - e->rx, e->center.y - e->ry,
-				e->rx * 2, e->ry * 2);
-			painter->resetTransform();
-			painter->save();
-			painter->setPen(Qt::black);
-			painter->drawText(e->center.x, e->center.y,
-				QString::number(obj->index));
-			painter->restore();
-		}
-		break;
-		default: LSPE_ASSERT(false);
-	}
-}
-
-bool querySelection(const lspe::abt::node *node, void *extra)
-{
-	using namespace lspe::shape;
-
-	struct QueryExtra
-	{
-		Object    **_selection;
-		bool       *_ondrag;
-		lspe::vec2 *_point;
-	};
-
-	auto  qe = (QueryExtra*)extra;
-	auto obj = (Object*)(node->userdata);
-
-	LSPE_DEBUG("Execute querySelection; target index=%d;", obj->index);
-
-	bool hit = false;
-	switch (obj->type)
-	{
-		case LINE:    hit = false; break;
-		case CIRCLE:  hit = lspe::contain(*(Circle *)(obj->shape), *qe->_point); break;
-		case POLYGEN: hit = lspe::contain(*(Polygen*)(obj->shape), *qe->_point); break;
-		case ELLIPSE: hit = lspe::contain(*(Ellipse*)(obj->shape), *qe->_point); break;
-		default: LSPE_ASSERT(false);
-	}
-
-	static const char *ShapeName[] = { "Circle", "Polygen", "Ellipse" };
-
-	if (hit)
-	{
-		LSPE_DEBUG("Execute querySelection: %s[%d] has been selected",
-			ShapeName[obj->type - CIRCLE],
-			obj->index);
-
-		*qe->_selection = obj;
-		*qe->_ondrag    = true;
-		return false;
-	}
-
-	LSPE_DEBUG("Execute querySelection: no selection");
-
-	return true;
-}
-
-void LspeCanvas::mousePressEvent(QMouseEvent *event)
-{
-	if (event->button() == Qt::LeftButton)
-	{
-		LSPE_ASSERT(!ondrag);
-
-		lspe::vec2 point(event->x(), event->y());
-		LSPE_DEBUG("Entry mousePressEvent: Point(%f,%f)",
-			point.x, point.y);
-
-		struct QueryExtra
-		{
-			Object    **_selection;
-			bool       *_ondrag;
-			lspe::vec2 *_point;
-		} extra;
-
-		extra._selection = &selection;
-		extra._ondrag    = &ondrag;
-		extra._point     = &point;
-
-		man->query(querySelection, point, &extra);
-
-		if (ondrag)
-		{
-			precoord = point;
-		}
-	}
-}
-
-void LspeCanvas::mouseMoveEvent(QMouseEvent *event)
-{
-	if (ondrag)
-	{
-		LSPE_ASSERT(selection != nullptr);
-
-		lspe::vec2 point(event->x(), event->y());
-
-		auto displacement = point - precoord;
-		man->moveObject(selection->index, selection->box, displacement);
-
-		if (enableResponse)
-		{
-			query(selection);
-			if (shouldBack)
+			auto e = (Polygen*)(obj->getShape().data);
+			std::vector<QPointF> points(e->vertices.size());
+			points.clear();
+			for (auto p : e->vertices)
 			{
-				man->moveObject(selection->index, selection->box, -displacement);
-				shouldBack = false;
-				LSPE_DEBUG("Drag Object: rejected movement");
-			} else
-			{
-				man->translate(selection->shape, selection->type, displacement);
-				precoord = point;
+				points.push_back(QPointF(p.x, p.y));
 			}
-		} else
-		{
-			man->translate(selection->shape, selection->type, displacement);
-			precoord = point;
+			painter->drawPolygon(&points[0], points.size());
+			// painter->drawRect(
+			// 	e->vertices[0].x, e->vertices[0].y,
+			// 	(e->vertices[2] - e->vertices[0]).x,
+			// 	(e->vertices[2] - e->vertices[0]).y);
 		}
-
-		update();
+		break;
+		case lspe::ShapeType::eEllipse:
+		{
+			auto e = (Ellipse*)(obj->getShape().data);
+			vec2 center = e->center;
+			float rx = e->rx;
+			float ry = e->ry;
+			painter->translate(center.x, center.y);
+			painter->rotate(e->rotation / lspe::Pi * 180);
+			painter->translate(-center.x, -center.y);
+			painter->drawEllipse(
+				center.x - rx, center.y - ry,
+				rx * 2, ry * 2);
+			painter->resetTransform();
+		}
+		break;
+		default: LSPE_ASSERT(false);
 	}
+
+	painter->resetTransform();
 }
 
 bool LspeCanvas::visit(lspe::abt::node *node, void *extra)
@@ -292,26 +162,44 @@ bool LspeCanvas::visit(lspe::abt::node *node, void *extra)
 	return true;
 }
 
-lspeman* LspeCanvas::setup()
+void LspeCanvas::setup()
 {
-	auto man = new lspeman;
+	int id;
+	lspe::RigidBody *body;
 
-	man->setBBoxExtension(4.0f);
+	//! create a rectangle as the ground
+	solver.newRectangleBody({ { 0, 540 }, { 600, 580 } });
+	body = (lspe::RigidBody*)solver.getUserdata(id);
+	body->setMass(sqrt(lspe::Inf));
+	body->setInertia(sqrt(lspe::Inf));
+	// body->applyForce2Center({ 0, -3 * body->getMass() }, true);
+	// body->setBodyType(lspe::BodyType::eStatic);
 
-	// man->newLine();
+	id = solver.newCircleBody({ 500, 137 }, 50);
+	body = (lspe::RigidBody*)solver.getUserdata(id);
+	body->applyForce2Center({ 0, 9.8 * body->getMass() }, true);
+	LSPE_DEBUG("CircleBody: Mass = %f kg", body->getMass());
+	LSPE_DEBUG("CircleBody: Inertia = %f kg*m^2", body->getInertia());
 
-	man->newPolygen();
-	man->newPolygen();
-	man->newPolygen();
-	man->newPolygen();
+	id = solver.newCircleBody({ 300, 400 }, 100);
+	body = (lspe::RigidBody*)solver.getUserdata(id);
+	body->applyForce2Center({ 0, -9.8 * body->getMass() }, true);
+	LSPE_DEBUG("CircleBody: Mass = %f kg", body->getMass());
+	LSPE_DEBUG("CircleBody: Inertia = %f kg*m^2", body->getInertia());
 
-	man->newCircle();
-	man->newCircle();
+	id = solver.newTriangleBody({ 64, 64 }, { 56, 200 }, { 200, 90 });
+	body = (lspe::RigidBody*)solver.getUserdata(id);
+	body->applyForce2Center({ 0, 9.8 * body->getMass() }, true);
+	body->applyLinearImpulse2Center({ 8 * body->getMass(), 0 }, true);
+	// body->applyAngularImpulse(lspe::Pi * 1e-10, true);
+	LSPE_DEBUG("TriangleBody: Mass = %f kg", body->getMass());
+	LSPE_DEBUG("TriangleBody: Inertia = %f kg*m^2", body->getInertia());
+	LSPE_DEBUG("TriangleBody: AngularVelocity = %f rad/s", body->getProperty().angularVelocity);
 
-	man->newEllipse();
-	man->newEllipse();
-
-	man->setStep(0.08f);
-
-	return man;
+	id = solver.newEllipseBody({ 300, 300 }, 100, 30);
+	body = (lspe::RigidBody*)solver.getUserdata(id);
+	body->applyForce2Center({ 0, 9.8 * body->getMass() }, true);
+	body->applyAngularImpulse(lspe::Pi * 1e-10, true);
+	LSPE_DEBUG("EllipseBody: Mass = %f kg", body->getMass());
+	LSPE_DEBUG("EllipseBody: Inertia = %f kg*m^2", body->getInertia());
 }
