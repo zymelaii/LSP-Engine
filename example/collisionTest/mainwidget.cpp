@@ -1,23 +1,20 @@
 #include "mainwidget.h"
 #include "ui_mainwidget.h"
 
-MainWidget::MainWidget(QWidget *parent) :
-    QWidget(parent),
-    ui(new Ui::MainWidget)
-{
+MainWidget::MainWidget(QWidget* parent)
+    : QWidget(parent)
+    , ui(new Ui::MainWidget) {
     ui->setupUi(this);
 
     this->setWindowTitle("LSPE DEMO - Collision Test | GJK");
-	this->setFixedSize(this->size());
-	this->setWindowFlags(this->windowFlags() &~ Qt::WindowMinMaxButtonsHint);
+    this->setFixedSize(this->size());
+    this->setWindowFlags(this->windowFlags() & ~Qt::WindowMinMaxButtonsHint);
 }
 
-MainWidget::~MainWidget()
-{
+MainWidget::~MainWidget() {
     delete ui;
 }
 
-LspeCanvas* MainWidget::canvas()
-{
-	return ui->canvas;
+LspeCanvas* MainWidget::canvas() {
+    return ui->canvas;
 }

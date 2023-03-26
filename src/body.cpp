@@ -1,453 +1,350 @@
 #include <lspe/body.h>
 
-namespace lspe
-{
+namespace lspe {
 
 using namespace lspe::shape;
 
-RigidBodyProperty::RigidBodyProperty()
-{
-	type            = BodyType::eNull;
-	shape           = { nullptr, ShapeType::eNull };
+RigidBodyProperty::RigidBodyProperty() {
+    type  = BodyType::eNull;
+    shape = {nullptr, ShapeType::eNull};
 
-	linearVelocity  = { 0.0f, 0.0f };
-	angularVelocity = 0.0f;
+    linearVelocity  = {0.0f, 0.0f};
+    angularVelocity = 0.0f;
 
-	linearDamping   = 0.0f;
-	angularDamping  = 0.0f;
+    linearDamping  = 0.0f;
+    angularDamping = 0.0f;
 
-	gravityScale    = 1.0f;
+    gravityScale = 1.0f;
 
-	world.location  = { 0.0f, 0.0f };
-	world.angle     = 0.0f;
+    world.location = {0.0f, 0.0f};
+    world.angle    = 0.0f;
 
-	enabled         = true;
-	awake           = true;
-	allowSleep      = true;
-	fixedRotation   = false;
-	enableCCD       = false;
+    enabled       = true;
+    awake         = true;
+    allowSleep    = true;
+    fixedRotation = false;
+    enableCCD     = false;
 
-	userdata        = nullptr;
-	reserved        = 0;
+    userdata = nullptr;
+    reserved = 0;
 }
 
 RigidBody::RigidBody()
-	: property(),
-	centroid(0, 0),
-	force(0, 0), torque(0.0f),
-	inertia(0.0f), inv_inertia(0.0f)
-{
-	setBodyType(BodyType::eStatic);
-	setMass(0);
+    : property()
+    , centroid(0, 0)
+    , force(0, 0)
+    , torque(0.0f)
+    , inertia(0.0f)
+    , inv_inertia(0.0f) {
+    setBodyType(BodyType::eStatic);
+    setMass(0);
 }
 
-RigidBody::~RigidBody()
-{
+RigidBody::~RigidBody() {}
 
+void RigidBody::preUpdate(float dt) {
+    if (!isEnabled()) return;
+    if (!isAwake()) return;
+    if (property.type == BodyType::eStatic) return;
+
+    property.linearVelocity  += force * inv_mass * dt;
+    property.angularVelocity += torque * inv_inertia * dt;
+
+    property.linearVelocity  *= 1.0f / (1.0f + property.linearDamping * dt);
+    property.angularVelocity *= 1.0f / (1.0f + property.angularDamping * dt);
 }
 
-void RigidBody::preUpdate(float dt)
-{
-	if (!isEnabled()) return;
-	if (!isAwake())   return;
-	if (property.type == BodyType::eStatic) return;
+void RigidBody::postUpdate(float dt) {
+    if (!isEnabled()) return;
+    if (!isAwake()) return;
+    if (property.type == BodyType::eStatic) return;
 
-	property.linearVelocity  += force * inv_mass * dt;
-	property.angularVelocity += torque * inv_inertia * dt;
+    vec2  displacement = property.linearVelocity * dt;
+    float rotation     = property.angularVelocity * dt;
 
-	property.linearVelocity  *= 1.0f / (1.0f + property.linearDamping * dt);
-	property.angularVelocity *= 1.0f / (1.0f + property.angularDamping * dt);
+    switch (property.shape.type) {
+        case ShapeType::eLine: {
+            auto e = (Line*)(property.shape.data);
+            translate(*e, displacement);
+            doRotation(*e, rotation);
+        } break;
+        case ShapeType::eCircle: {
+            auto e = (Circle*)(property.shape.data);
+            translate(*e, displacement);
+            doRotation(*e, rotation);
+        } break;
+        case ShapeType::ePolygen: {
+            auto e = (Polygen*)(property.shape.data);
+            translate(*e, displacement);
+            doRotation(*e, rotation);
+        } break;
+        case ShapeType::eEllipse: {
+            auto e = (Ellipse*)(property.shape.data);
+            translate(*e, displacement);
+            doRotation(*e, rotation);
+        } break;
+        case ShapeType::eBezier2: {
+            auto e = (Bezier2*)(property.shape.data);
+            translate(*e, displacement);
+            doRotation(*e, rotation);
+        } break;
+        case ShapeType::eBezier3: {
+            auto e = (Bezier3*)(property.shape.data);
+            translate(*e, displacement);
+            doRotation(*e, rotation);
+        } break;
+        default: {
+            LSPE_DEBUG("lspe::Body: "
+                       "user-defined shape type has no update function yet");
+        }
+    }
 }
 
-void RigidBody::postUpdate(float dt)
-{
-	if (!isEnabled()) return;
-	if (!isAwake())   return;
-	if (property.type == BodyType::eStatic) return;
-
-	vec2  displacement = property.linearVelocity * dt;
-	float rotation     = property.angularVelocity * dt;
-
-	switch (property.shape.type)
-	{
-		case ShapeType::eLine:
-		{
-			auto e = (Line*)(property.shape.data);
-			translate(*e, displacement);
-			doRotation(*e, rotation);
-		}
-		break;
-		case ShapeType::eCircle:
-		{
-			auto e = (Circle*)(property.shape.data);
-			translate(*e, displacement);
-			doRotation(*e, rotation);
-		}
-		break;
-		case ShapeType::ePolygen:
-		{
-			auto e = (Polygen*)(property.shape.data);
-			translate(*e, displacement);
-			doRotation(*e, rotation);
-		}
-		break;
-		case ShapeType::eEllipse:
-		{
-			auto e = (Ellipse*)(property.shape.data);
-			translate(*e, displacement);
-			doRotation(*e, rotation);
-		}
-		break;
-		case ShapeType::eBezier2:
-		{
-			auto e = (Bezier2*)(property.shape.data);
-			translate(*e, displacement);
-			doRotation(*e, rotation);
-		}
-		break;
-		case ShapeType::eBezier3:
-		{
-			auto e = (Bezier3*)(property.shape.data);
-			translate(*e, displacement);
-			doRotation(*e, rotation);
-		}
-		break;
-		default:
-		{
-			LSPE_DEBUG(
-				"lspe::Body: "
-				"user-defined shape type has no update function yet");
-		}
-	}
+BodyType RigidBody::getBodyType() const {
+    return property.type;
 }
 
-BodyType RigidBody::getBodyType() const
-{
-	return property.type;
+Shape RigidBody::getShape() const {
+    return property.shape;
 }
 
-Shape RigidBody::getShape() const
-{
-	return property.shape;
+void RigidBody::setBodyType(BodyType type) {
+    if (property.type == type) return;
+
+    property.type = type;
+
+    if (type == BodyType::eStatic) {
+        property.linearVelocity  = {0.0f, 0.0f};
+        property.angularVelocity = 0.0f;
+        flags                    &= ~RigidBodyFlag::eAwake;
+    } else {
+        setAwake(true);
+    }
+
+    force  = {0.0f, 0.0f};
+    torque = 0.0f;
 }
 
-void RigidBody::setBodyType(BodyType type)
-{
-	if (property.type == type) return;
-
-	property.type = type;
-
-	if (type == BodyType::eStatic)
-	{
-		property.linearVelocity  = { 0.0f, 0.0f };
-		property.angularVelocity = 0.0f;
-		flags &= ~RigidBodyFlag::eAwake;
-	} else
-	{
-		setAwake(true);
-	}
-
-	force  = { 0.0f, 0.0f };
-	torque = 0.0f;
+RigidBodyProperty& RigidBody::getProperty() {
+    return property;
 }
 
-RigidBodyProperty& RigidBody::getProperty()
-{
-	return property;
+bool RigidBody::setShape(Shape shape) {
+    if (shape.type != ShapeType::eNull && shape.data != nullptr) {
+        property.shape = shape;
+        centroid       = centroidOf(property.shape);
+        return true;
+    }
+    return false;
 }
 
-bool RigidBody::setShape(Shape shape)
-{
-	if (shape.type != ShapeType::eNull
-		&& shape.data != nullptr)
-	{
-		property.shape = shape;
-		centroid = centroidOf(property.shape);
-		return true;
-	}
-	return false;
+void RigidBody::applyForce2Center(vec2 force, bool wake) {
+    if (property.type != BodyType::eDynamic) return;
+
+    if (wake && (flags & RigidBodyFlag::eAwake) == 0) { setAwake(true); }
+
+    if (flags & RigidBodyFlag::eAwake) { this->force += force; }
 }
 
-void RigidBody::applyForce2Center(vec2 force, bool wake)
-{
-	if (property.type != BodyType::eDynamic) return;
+void RigidBody::applyForce(vec2 force, vec2 point, bool wake) {
+    if (property.type != BodyType::eDynamic) return;
 
-	if (wake && (flags & RigidBodyFlag::eAwake) == 0)
-	{
-		setAwake(true);
-	}
+    if (wake && (flags & RigidBodyFlag::eAwake) == 0) { setAwake(true); }
 
-	if (flags & RigidBodyFlag::eAwake)
-	{
-		this->force += force;
-	}
+    if (flags & RigidBodyFlag::eAwake) {
+        this->force  += force;
+        this->torque += cross(point - centroid, force);
+    }
 }
 
-void RigidBody::applyForce(vec2 force, vec2 point, bool wake)
-{
-	if (property.type != BodyType::eDynamic) return;
+void RigidBody::applyTorque(float torque, bool wake) {
+    if (property.type != BodyType::eDynamic) return;
 
-	if (wake && (flags & RigidBodyFlag::eAwake) == 0)
-	{
-		setAwake(true);
-	}
+    if (wake && (flags & RigidBodyFlag::eAwake) == 0) { setAwake(true); }
 
-	if (flags & RigidBodyFlag::eAwake)
-	{
-		this->force += force;
-		this->torque += cross(point - centroid, force);
-	}
+    if (flags & RigidBodyFlag::eAwake) { this->torque += torque; }
 }
 
-void RigidBody::applyTorque(float torque, bool wake)
-{
-	if (property.type != BodyType::eDynamic) return;
+void RigidBody::applyLinearImpulse2Center(vec2 linearImpulse, bool wake) {
+    if (property.type != BodyType::eDynamic) return;
 
-	if (wake && (flags & RigidBodyFlag::eAwake) == 0)
-	{
-		setAwake(true);
-	}
+    if (wake && (flags & RigidBodyFlag::eAwake) == 0) { setAwake(true); }
 
-	if (flags & RigidBodyFlag::eAwake)
-	{
-		this->torque += torque;
-	}
+    if (flags & RigidBodyFlag::eAwake) {
+        property.linearVelocity += linearImpulse * inv_mass;
+    }
 }
 
-void RigidBody::applyLinearImpulse2Center(vec2 linearImpulse, bool wake)
-{
-	if (property.type != BodyType::eDynamic) return;
+void RigidBody::applyLinearImpulse(vec2 linearImpulse, vec2 point, bool wake) {
+    if (property.type != BodyType::eDynamic) return;
 
-	if (wake && (flags & RigidBodyFlag::eAwake) == 0)
-	{
-		setAwake(true);
-	}
+    if (wake && (flags & RigidBodyFlag::eAwake) == 0) { setAwake(true); }
 
-	if (flags & RigidBodyFlag::eAwake)
-	{
-		property.linearVelocity += linearImpulse * inv_mass;
-	}
+    if (flags & RigidBodyFlag::eAwake) {
+        property.linearVelocity += linearImpulse * inv_mass;
+        property.angularVelocity +=
+            cross(point - centroid, linearImpulse) * inv_inertia;
+    }
 }
 
-void RigidBody::applyLinearImpulse(vec2 linearImpulse, vec2 point, bool wake)
-{
-	if (property.type != BodyType::eDynamic) return;
+void RigidBody::applyAngularImpulse(float angularImpulse, bool wake) {
+    if (property.type != BodyType::eDynamic) return;
 
-	if (wake && (flags & RigidBodyFlag::eAwake) == 0)
-	{
-		setAwake(true);
-	}
+    if (wake && (flags & RigidBodyFlag::eAwake) == 0) { setAwake(true); }
 
-	if (flags & RigidBodyFlag::eAwake)
-	{
-		property.linearVelocity += linearImpulse * inv_mass;
-		property.angularVelocity +=
-			cross(point - centroid, linearImpulse) * inv_inertia;
-	}
+    if (flags & RigidBodyFlag::eAwake) {
+        property.angularVelocity += angularImpulse * inv_inertia;
+    }
 }
 
-void RigidBody::applyAngularImpulse(float angularImpulse, bool wake)
-{
-	if (property.type != BodyType::eDynamic) return;
-
-	if (wake && (flags & RigidBodyFlag::eAwake) == 0)
-	{
-		setAwake(true);
-	}
-
-	if (flags & RigidBodyFlag::eAwake)
-	{
-		property.angularVelocity += angularImpulse * inv_inertia;
-	}
+vec2 RigidBody::getCentroid() const {
+    return centroid;
 }
 
-vec2 RigidBody::getCentroid() const
-{
-	return centroid;
+float RigidBody::getMass() const {
+    return mass;
 }
 
-float RigidBody::getMass() const
-{
-	return mass;
+float RigidBody::getInvMass() const {
+    return inv_mass;
 }
 
-float RigidBody::getInvMass() const
-{
-	return inv_mass;
+float RigidBody::getInertia() const {
+    return inertia;
 }
 
-float RigidBody::getInertia() const
-{
-	return inertia;
+float RigidBody::getInvInertia() const {
+    return inv_inertia;
 }
 
-float RigidBody::getInvInertia() const
-{
-	return inv_inertia;
+void RigidBody::setMass(float mass) {
+    if (property.type == BodyType::eDynamic) {
+        this->mass     = mass <= FLT_EPSILON ? 1.0f : mass;
+        this->inv_mass = 1.0f / this->mass;
+    } else {
+        this->mass     = Inf;
+        this->inv_mass = 0;
+    }
 }
 
-void RigidBody::setMass(float mass)
-{
-	if (property.type == BodyType::eDynamic)
-	{
-		this->mass = mass <= FLT_EPSILON ? 1.0f : mass;
-		this->inv_mass = 1.0f / this->mass;
-	} else
-	{
-		this->mass     = Inf;
-		this->inv_mass = 0;
-	}
+void RigidBody::setInertia(float inertia) {
+    if (property.type != BodyType::eDynamic) return;
+
+    this->inertia     = inertia;
+    this->inv_inertia = 1.0f / this->inertia;
 }
 
-void RigidBody::setInertia(float inertia)
-{
-	if (property.type != BodyType::eDynamic) return;
-
-	this->inertia = inertia;
-	this->inv_inertia = 1.0f / this->inertia;
+vec2 RigidBody::getLinearVelocity() const {
+    return property.linearVelocity;
 }
 
-vec2 RigidBody::getLinearVelocity() const
-{
-	return property.linearVelocity;
+float RigidBody::getAngularVelocity() const {
+    return property.angularVelocity;
 }
 
-float RigidBody::getAngularVelocity() const
-{
-	return property.angularVelocity;
+float RigidBody::getLinearDamping() const {
+    return property.linearDamping;
 }
 
-float RigidBody::getLinearDamping() const
-{
-	return property.linearDamping;
+float RigidBody::getAngularDamping() const {
+    return property.angularDamping;
 }
 
-float RigidBody::getAngularDamping() const
-{
-	return property.angularDamping;
+float RigidBody::getGravityScale() const {
+    return property.gravityScale;
 }
 
-float RigidBody::getGravityScale() const
-{
-	return property.gravityScale;
+void RigidBody::setLinearVelocity(const vec2& linearVelocity) {
+    property.linearVelocity = linearVelocity;
 }
 
-void RigidBody::setLinearVelocity(const vec2 &linearVelocity)
-{
-	property.linearVelocity = linearVelocity;
+void RigidBody::setAngularVelocity(float angularVelocity) {
+    property.angularVelocity = angularVelocity;
 }
 
-void RigidBody::setAngularVelocity(float angularVelocity)
-{
-	property.angularVelocity = angularVelocity;
+void RigidBody::setLinearDamping(float linearDamping) {
+    property.linearDamping = linearDamping;
 }
 
-void RigidBody::setLinearDamping(float linearDamping)
-{
-	property.linearDamping = linearDamping;
+void RigidBody::setAngularDamping(float angularDamping) {
+    property.angularDamping = angularDamping;
 }
 
-void RigidBody::setAngularDamping(float angularDamping)
-{
-	property.angularDamping = angularDamping;
+void RigidBody::setGravityScale(float gravityScale) {
+    property.gravityScale = gravityScale;
 }
 
-void RigidBody::setGravityScale(float gravityScale)
-{
-	property.gravityScale = gravityScale;
+bool RigidBody::isEnabled() const {
+    return property.enabled;
 }
 
-bool RigidBody::isEnabled() const
-{
-	return property.enabled;
+bool RigidBody::isAwake() const {
+    return property.awake;
 }
 
-bool RigidBody::isAwake() const
-{
-	return property.awake;
+bool RigidBody::isAllowSleep() const {
+    return property.allowSleep;
 }
 
-bool RigidBody::isAllowSleep() const
-{
-	return property.allowSleep;
+bool RigidBody::isEnableCCD() const {
+    return property.enableCCD;
 }
 
-bool RigidBody::isEnableCCD() const
-{
-	return property.enableCCD;
+bool RigidBody::isFixedRotation() const {
+    return property.fixedRotation;
 }
 
-bool RigidBody::isFixedRotation() const
-{
-	return property.fixedRotation;
+void RigidBody::setEnabled(bool flag) {
+    if (flag) {
+        flags |= RigidBodyFlag::eEnabled;
+    } else {
+        flags &= ~RigidBodyFlag::eEnabled;
+    }
 }
 
-void RigidBody::setEnabled(bool flag)
-{
-	if (flag)
-	{
-		flags |= RigidBodyFlag::eEnabled;
-	} else
-	{
-		flags &= ~RigidBodyFlag::eEnabled;
-	}
+void RigidBody::setAwake(bool flag) {
+    if (property.type == BodyType::eStatic) return;
+
+    if (flag) {
+        flags |= RigidBodyFlag::eAwake;
+    } else {
+        flags &= ~RigidBodyFlag::eAwake;
+
+        property.linearVelocity  = {0.0f, 0.0f};
+        property.angularVelocity = 0.0f;
+        force                    = {0.0f, 0.0f};
+        torque                   = 0.0f;
+    }
+
+    sleepTime = 0;
 }
 
-void RigidBody::setAwake(bool flag)
-{
-	if (property.type == BodyType::eStatic) return;
+void RigidBody::setAllowSleep(bool flag) {
+    if (flag) {
+        flags |= RigidBodyFlag::eAutoSleep;
+    } else {
+        flags &= ~RigidBodyFlag::eAutoSleep;
 
-	if (flag)
-	{
-		flags |= RigidBodyFlag::eAwake;
-	} else
-	{
-		flags &= ~RigidBodyFlag::eAwake;
-
-		property.linearVelocity = { 0.0f, 0.0f };
-		property.angularVelocity = 0.0f;
-		force = { 0.0f, 0.0f };
-		torque = 0.0f;
-	}
-
-	sleepTime = 0;
+        setAwake(true);
+    }
 }
 
-void RigidBody::setAllowSleep(bool flag)
-{
-	if (flag)
-	{
-		flags |= RigidBodyFlag::eAutoSleep;
-	} else
-	{
-		flags &= ~RigidBodyFlag::eAutoSleep;
-
-		setAwake(true);
-	}
+void RigidBody::setEnableCCD(bool flag) {
+    if (flag) {
+        flags |= RigidBodyFlag::eEnableCCD;
+    } else {
+        flags &= ~RigidBodyFlag::eEnableCCD;
+    }
 }
 
-void RigidBody::setEnableCCD(bool flag)
-{
-	if (flag)
-	{
-		flags |= RigidBodyFlag::eEnableCCD;
-	} else
-	{
-		flags &= ~RigidBodyFlag::eEnableCCD;
-	}
+void RigidBody::setFixedRotation(bool flag) {
+    if (flag) {
+        flags |= RigidBodyFlag::eFixedRotation;
+    } else {
+        flags &= ~RigidBodyFlag::eFixedRotation;
+    }
+
+    property.angularVelocity = 0.0f;
 }
 
-void RigidBody::setFixedRotation(bool flag)
-{
-	if (flag)
-	{
-		flags |= RigidBodyFlag::eFixedRotation;
-	} else
-	{
-		flags &= ~RigidBodyFlag::eFixedRotation;
-	}
-
-	property.angularVelocity = 0.0f;
-}
-
-};
+}; // namespace lspe

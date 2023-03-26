@@ -1,6 +1,3 @@
 #include <lspe/world.h>
 
-namespace lspe
-{
-
-};
+namespace lspe {};

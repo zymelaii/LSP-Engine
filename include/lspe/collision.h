@@ -7,7 +7,7 @@
  *
  *  @brief: use GJK + EPA / MPR algorithm
  *
- *  @NOTES: 
+ *  @NOTES:
  *******************************/
 
 #include "../lspe/base/base.h"
@@ -15,14 +15,12 @@
 #include "../lspe/base/mat.h"
 #include "../lspe/shape.h"
 
-namespace lspe
-{
+namespace lspe {
 
 class Arbiter;
 class Collider;
 
-namespace collision
-{
+namespace collision {
 
 //! customizable support function for GJK/EPA/MPR algorithm
 //! it should return the maximum point of the projection
@@ -36,153 +34,152 @@ typedef vec2 (*fnsupport)(Shape x, const vec2 &direction);
 //! it allows more given params to spawn a vec2
 typedef vec2 (*fnsupport2)(Shape x, Shape y, const vec2 &v, void *extra);
 
-vec2 supportLine    (Shape x, const vec2 &direction);
-vec2 supportCircle  (Shape x, const vec2 &direction); //$ DONE
-vec2 supportPolygen (Shape x, const vec2 &direction); //$ DONE
-vec2 supportEllipse (Shape x, const vec2 &direction); //$ DONE
-vec2 supportBezier2 (Shape x, const vec2 &direction);
-vec2 supportBezier3 (Shape x, const vec2 &direction);
+vec2 supportLine(Shape x, const vec2 &direction);
+vec2 supportCircle(Shape x, const vec2 &direction);  //$ DONE
+vec2 supportPolygen(Shape x, const vec2 &direction); //$ DONE
+vec2 supportEllipse(Shape x, const vec2 &direction); //$ DONE
+vec2 supportBezier2(Shape x, const vec2 &direction);
+vec2 supportBezier3(Shape x, const vec2 &direction);
 
-};
+}; // namespace collision
 
-class Arbiter
-{
+class Arbiter {
 public:
-	Arbiter() = delete;
-	Arbiter(const Arbiter &a) = delete;
+    Arbiter()                 = delete;
+    Arbiter(const Arbiter &a) = delete;
 
-	Arbiter(Collider *collider, size_t maxIter = 16);
-	~Arbiter();
+    Arbiter(Collider *collider, size_t maxIter = 16);
+    ~Arbiter();
 
-	void setEps(float eps);
+    void setEps(float eps);
 
-	void resetCollider(Collider *collider);
+    void resetCollider(Collider *collider);
 
-	bool isActive() const;
-	bool isCollided() const;
+    bool isActive() const;
+    bool isCollided() const;
 
-	void getPenetration(vec2 *penetrationVector) const;
-	void getPenetration(vec2 *normal, float *distance) const;
+    void getPenetration(vec2 *penetrationVector) const;
+    void getPenetration(vec2 *normal, float *distance) const;
 
-	void getClosetPoint(vec2 *a, vec2 *b) const;
+    void getClosetPoint(vec2 *a, vec2 *b) const;
 
-	//! perform further detection
-	//! return true if everything done
-	//! otherwise return false
-	bool perform();
+    //! perform further detection
+    //! return true if everything done
+    //! otherwise return false
+    bool perform();
 
 protected:
-	void getClosetPoint();
-	void getContacts();
+    void getClosetPoint();
+    void getContacts();
 
 private:
-	struct MetaPoint
-	{
-		vec2 point;
-		vec2 fromA;
-		vec2 fromB;
-	};
+    struct MetaPoint {
+        vec2 point;
+        vec2 fromA;
+        vec2 fromB;
+    };
 
-	struct MetaEdge
-	{
-		int aId;
-		int bId;
-		float perpDistance;
-	};
+    struct MetaEdge {
+        int   aId;
+        int   bId;
+        float perpDistance;
+    };
 
-	using MinkowskiSubtractionSet = std::vector<MetaPoint>;
-	using MinkowskiEdges = std::vector<MetaEdge>;
-	using Indicies = std::vector<int>;
+    using MinkowskiSubtractionSet = std::vector<MetaPoint>;
+    using MinkowskiEdges          = std::vector<MetaEdge>;
+    using Indicies                = std::vector<int>;
 
-	//! needed by EPA performance
-	MinkowskiSubtractionSet M;
+    //! needed by EPA performance
+    MinkowskiSubtractionSet M;
     MinkowskiEdges          E;
-	Indicies                I;
+    Indicies                I;
 
-	//! get from Collider
-	Shape                shapes[2];
-	collision::fnsupport support[2];
+    //! get from Collider
+    Shape                shapes[2];
+    collision::fnsupport support[2];
 
-	//! perform results
-	bool collided;
-	struct { vec2 normal; float distance; } penetration;
-	vec2 closetPoint[2];
+    //! perform results
+    bool collided;
 
-	//! whether Arbiter binds a valid Collider
-	bool active;
+    struct {
+        vec2  normal;
+        float distance;
+    } penetration;
 
-	float epsilon;
-	size_t maxIteration;
+    vec2 closetPoint[2];
+
+    //! whether Arbiter binds a valid Collider
+    bool active;
+
+    float  epsilon;
+    size_t maxIteration;
 };
 
-class Collider
-{
-public: friend class Arbiter;
+class Collider {
 public:
-	Collider();
-
-	//! test collision
-	//! this may not absolutely right
-	//! final result of collision test will be decided by Arbiter
-	bool collided();
+    friend class Arbiter;
 
 public:
+    Collider();
 
-	//! note: functions below must be called one by one
-	//! before you start the collision test
+    //! test collision
+    //! this may not absolutely right
+    //! final result of collision test will be decided by Arbiter
+    bool collided();
 
-	//! decide the two shapes to test collision
-	void setTestPair(Shape a, Shape b);
+public:
+    //! note: functions below must be called one by one
+    //! before you start the collision test
 
-	//! bind support function for (a, b)
-	void bindSupports(
-		collision::fnsupport support1,
-		collision::fnsupport support2);
+    //! decide the two shapes to test collision
+    void setTestPair(Shape a, Shape b);
 
-	//! bind generator to decide the first direction
-	//! it is wanted by GJK/EPA algorithm
-	void bindInitialGenerator(
-		collision::fnsupport2 generator);
+    //! bind support function for (a, b)
+    void bindSupports(
+        collision::fnsupport support1, collision::fnsupport support2);
 
-	//! bind an extra pointer to Collider
-	//! it can be used within any callback function
-	//! whose type is fnsupport2 or Collider::fndebug
-	void bindExtraData(void *extra);
-	void* getExtraData();
+    //! bind generator to decide the first direction
+    //! it is wanted by GJK/EPA algorithm
+    void bindInitialGenerator(collision::fnsupport2 generator);
 
-	//! clear status collision test
-	//! call it before you perform a second test
-	void reset();
+    //! bind an extra pointer to Collider
+    //! it can be used within any callback function
+    //! whose type is fnsupport2 or Collider::fndebug
+    void  bindExtraData(void *extra);
+    void *getExtraData();
+
+    //! clear status collision test
+    //! call it before you perform a second test
+    void reset();
 
 protected:
-	//! add a point of simplex
-	void addSimplexPoint(vec2 direction);
+    //! add a point of simplex
+    void addSimplexPoint(vec2 direction);
 
-	//! determine whether the generated simplex contains the origin
-	//! wanted by collided()
-	bool simplexContainOrigin(vec2 &direction);
+    //! determine whether the generated simplex contains the origin
+    //! wanted by collided()
+    bool simplexContainOrigin(vec2 &direction);
 
 private:
-	Shape shapes[2];
-	collision::fnsupport2 getfirstdirection;
-	collision::fnsupport support[2];
-	void *extra;
+    Shape                 shapes[2];
+    collision::fnsupport2 getfirstdirection;
+    collision::fnsupport  support[2];
+    void                 *extra;
 
-	//! simplex is generated by collided()
-	//! for each simplex point simplex[i] = fromA[i] - fromB[i]
-	vec2 simplex[3];
-	vec2 fromA[3], fromB[3];
-	int simplexIndex;
+    //! simplex is generated by collided()
+    //! for each simplex point simplex[i] = fromA[i] - fromB[i]
+    vec2 simplex[3];
+    vec2 fromA[3], fromB[3];
+    int  simplexIndex;
 
-	//! mark whether Collider has performed the collision test
-	//! only when tested, getArbiter() is allowed
-	bool tested;
-	bool iscollided;
+    //! mark whether Collider has performed the collision test
+    //! only when tested, getArbiter() is allowed
+    bool tested;
+    bool iscollided;
 
-	//! it will decide whether a collision test is allowed
-	//! note: available only when DEBUG was defined
-	int flag;
-
+    //! it will decide whether a collision test is allowed
+    //! note: available only when DEBUG was defined
+    int flag;
 };
 
-};
+}; // namespace lspe
