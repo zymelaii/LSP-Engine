@@ -14,5 +14,4 @@
 #include "../lspe/collision.h"
 #include "../lspe/world.h"
 
-
 #endif /* LSPE_H */

@@ -6,18 +6,17 @@
 
 namespace Ui {
 class MainWidget;
-}
+} // namespace Ui
 
-class MainWidget : public QWidget
-{
+class MainWidget : public QWidget {
     Q_OBJECT
 
 public:
     explicit MainWidget(QWidget *parent = 0);
     ~MainWidget();
 
-    void bind(lspeman *man);
-   	LspeCanvas* canvas();
+    void        bind(lspeman *man);
+    LspeCanvas *canvas();
 
 private:
     Ui::MainWidget *ui;

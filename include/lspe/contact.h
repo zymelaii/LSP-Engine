@@ -1,18 +1,15 @@
 #pragma once
 
-namespace lspe
-{
+namespace lspe {
 
-class ContactInfo
-{
+class ContactInfo {
 public:
-	ContactInfo();
-	~ContactInfo();
+    ContactInfo();
+    ~ContactInfo();
 
 protected:
 
 private:
-
 };
 
-}
+} // namespace lspe

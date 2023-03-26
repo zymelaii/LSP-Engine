@@ -5,39 +5,37 @@
 
 namespace Ui {
 class LspeCanvas;
-}
+} // namespace Ui
 
-class LspeCanvas : public QWidget
-{
-	Q_OBJECT
+class LspeCanvas : public QWidget {
+    Q_OBJECT
 
 public:
-	explicit LspeCanvas(QWidget *parent = 0);
-	~LspeCanvas();
+    explicit LspeCanvas(QWidget *parent = 0);
+    ~LspeCanvas();
 
-	void bind(lspeman *man);
+    void bind(lspeman *man);
 
-	void setInterval(int interval);
-	void startRender();
-	void stopRender();
+    void setInterval(int interval);
+    void startRender();
+    void stopRender();
 
-	//! customizable function
-	void paintEvent(QPaintEvent *event);
+    //! customizable function
+    void paintEvent(QPaintEvent *event);
 
 public slots:
-	void render();
+    void render();
 
 private:
-	Ui::LspeCanvas *ui;
+    Ui::LspeCanvas *ui;
 
-	QPainter *painter;
-	QTimer *tmRender;
+    QPainter *painter;
+    QTimer   *tmRender;
 
-	lspeman *man;
+    lspeman *man;
 
-	//! customizable function
-	static bool visit(lspe::abt::node *node, void *extra);
-
+    //! customizable function
+    static bool visit(lspe::abt::node *node, void *extra);
 };
 
 #endif // LSPECANVAS_H
