@@ -81,8 +81,7 @@ void LspeCanvas::paintEvent(QPaintEvent *event) {
         painter->setBrush(Qt::NoBrush);
 
         if (shouldDrawBBox) {
-            man->traverse(
-                (lspe::abt::fnvisit)visit, this, lspe::abt::POSTORDER);
+            man->traverse(&LspeCanvas::visit, this, lspe::abt::POSTORDER);
         }
         // qDebug() << "Finish traverse(fnvisit, void*, int)";
 
@@ -109,6 +108,9 @@ void LspeCanvas::paintEvent(QPaintEvent *event) {
 
 void LspeCanvas::drawObject(Object *obj) {
     using namespace lspe::shape;
+
+    if (painter == nullptr) {}
+
     switch (obj->type) {
         case LINE: {
             auto e = (Line *)obj->shape.data;
@@ -342,16 +344,16 @@ void configCollider(
 
     switch (b.type) {
         case LINE:
-            c2 = lspe::centroidOf(*(Line *)(&b.shape));
+            c2 = lspe::centroidOf(*(Line *)(b.shape.data));
             break;
         case CIRCLE:
-            c2 = lspe::centroidOf(*(Circle *)(&b.shape));
+            c2 = lspe::centroidOf(*(Circle *)(b.shape.data));
             break;
         case POLYGEN:
-            c2 = lspe::centroidOf(*(Polygen *)(&b.shape));
+            c2 = lspe::centroidOf(*(Polygen *)(b.shape.data));
             break;
         case ELLIPSE:
-            c2 = lspe::centroidOf(*(Ellipse *)(&b.shape));
+            c2 = lspe::centroidOf(*(Ellipse *)(b.shape.data));
             break;
         default:
             LSPE_ASSERT(false);
@@ -411,10 +413,12 @@ bool LspeCanvas::_query(const lspe::abt::node *node, void *extra) {
             lspe::vec2 a, b;
             arbiter.getClosetPoint(&a, &b);
 
-            painter->save();
-            painter->setPen(QPen(Qt::cyan, 2));
-            painter->drawLine(a.x, a.y, b.x, b.y);
-            painter->restore();
+            if (painter != nullptr) {
+                painter->save();
+                painter->setPen(QPen(Qt::cyan, 2));
+                painter->drawLine(a.x, a.y, b.x, b.y);
+                painter->restore();
+            }
 
             auto lc = (LspeCanvas *)(qe->_this);
             if (lc->hasCollisionResponse()) { lc->cancelPreStep(); }
@@ -426,7 +430,7 @@ bool LspeCanvas::_query(const lspe::abt::node *node, void *extra) {
     return true;
 }
 
-bool LspeCanvas::visit(lspe::abt::node *node, void *extra) {
+bool LspeCanvas::visit(const lspe::abt::node *node, void *extra) {
     auto       p = (LspeCanvas *)extra;
     lspe::vec2 l = node->box.lower;
     lspe::vec2 s = node->box.upper - l;
@@ -439,7 +443,7 @@ lspeman *LspeCanvas::setup() {
 
     man->setBBoxExtension(4.0f);
 
-    // man->newLine();
+    man->newLine();
 
     man->newPolygen();
     man->newPolygen();

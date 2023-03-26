@@ -53,7 +53,7 @@ private:
     void mouseReleaseEvent(QMouseEvent *event);
 
     //! customizable function
-    static bool visit(lspe::abt::node *node, void *extra);
+    static bool visit(const lspe::abt::node *node, void *extra);
     void        drawObject(Object *obj);
     void        query(Object *obj);
     static bool _query(const lspe::abt::node *node, void *extra);
