@@ -11,10 +11,10 @@ MainWidget::MainWidget(QWidget *parent) :
 	this->setFixedSize(this->size());
 	this->setWindowFlags(this->windowFlags() &~ Qt::WindowMinMaxButtonsHint);
 
-	connect(ui->cbAABB, QCheckBox::stateChanged,
-		ui->canvas, LspeCanvas::updateShouldDrawBBox);
-	connect(ui->cbCollisionResponse, QCheckBox::stateChanged,
-		ui->canvas, LspeCanvas::updateShouldRespondCollision);
+	connect(ui->cbAABB, &QCheckBox::stateChanged,
+		ui->canvas, &LspeCanvas::updateShouldDrawBBox);
+	connect(ui->cbCollisionResponse, &QCheckBox::stateChanged,
+		ui->canvas, &LspeCanvas::updateShouldRespondCollision);
 
 	ui->canvas->setMouseTracking(true);
 }

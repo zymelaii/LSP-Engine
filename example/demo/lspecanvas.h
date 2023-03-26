@@ -40,7 +40,7 @@ private:
 	bool initialized;
 
 	//! customizable function
-	static bool visit(lspe::abt::node *node, void *extra);
+	static bool visit(const lspe::abt::node *node, void *extra);
 	static bool _query(const lspe::abt::node *node, void *extra);
 	void setup();
 };

@@ -24,10 +24,10 @@ lspeman::~lspeman()
 	{
 		switch (e->type)
 		{
-			case LINE:    delete (Line   *)e->shape; break;
-			case CIRCLE:  delete (Circle *)e->shape; break;
-			case POLYGEN: delete (Polygen*)e->shape; break;
-			case ELLIPSE: delete (Ellipse*)e->shape; break;
+			case LINE:    delete (Line   *)e->shape.data; break;
+			case CIRCLE:  delete (Circle *)e->shape.data; break;
+			case POLYGEN: delete (Polygen*)e->shape.data; break;
+			case ELLIPSE: delete (Ellipse*)e->shape.data; break;
 			default: LSPE_ASSERT(false);
 		}
 		delete e;
@@ -46,10 +46,10 @@ bbox2 lspeman::bboxOf(Shape shape, int type)
 
 	switch (type)
 	{
-		case LINE:    box = lspe::bboxOf(*(Line   *)shape); break;
-		case CIRCLE:  box = lspe::bboxOf(*(Circle *)shape); break;
-		case POLYGEN: box = lspe::bboxOf(*(Polygen*)shape); break;
-		case ELLIPSE: box = lspe::bboxOf(*(Ellipse*)shape); break;
+		case LINE:    box = lspe::bboxOf(*(Line   *)shape.data); break;
+		case CIRCLE:  box = lspe::bboxOf(*(Circle *)shape.data); break;
+		case POLYGEN: box = lspe::bboxOf(*(Polygen*)shape.data); break;
+		case ELLIPSE: box = lspe::bboxOf(*(Ellipse*)shape.data); break;
 		default: LSPE_ASSERT(false);
 	}
 
@@ -64,29 +64,41 @@ ObjectList& lspeman::getObjects()
 void lspeman::newLine()
 {
 	auto e = new Line;
-	quickGenerate((Shape)e, LINE);
-	addObject((Shape)e, LINE);
+	Shape shape;
+	shape.data = e;
+	shape.type = ShapeType::eLine;
+	quickGenerate(shape, LINE);
+	addObject(shape, LINE);
 }
 
 void lspeman::newCircle()
 {
 	auto e = new Circle;
-	quickGenerate((Shape)e, CIRCLE);
-	addObject((Shape)e, CIRCLE);
+	Shape shape;
+	shape.data = e;
+	shape.type = ShapeType::eCircle;
+	quickGenerate(shape, CIRCLE);
+	addObject(shape, CIRCLE);
 }
 
 void lspeman::newPolygen()
 {
 	auto e = new Polygen;
-	quickGenerate((Shape)e, POLYGEN);
-	addObject((Shape)e, POLYGEN);
+	Shape shape;
+	shape.data = e;
+	shape.type = ShapeType::ePolygen;
+	quickGenerate(shape, POLYGEN);
+	addObject(shape, POLYGEN);
 }
 
 void lspeman::newEllipse()
 {
 	auto e = new Ellipse;
-	quickGenerate((Shape)e, ELLIPSE);
-	addObject((Shape)e, ELLIPSE);
+	Shape shape;
+	shape.data = e;
+	shape.type = ShapeType::eEllipse;
+	quickGenerate(shape, ELLIPSE);
+	addObject(shape, ELLIPSE);
 }
 
 void lspeman::quickGenerate(Shape shape, int type)
@@ -99,7 +111,7 @@ void lspeman::quickGenerate(Shape shape, int type)
 	{
 		case LINE:
 		{
-			auto e = (Line*)shape;
+			auto e = (Line*)shape.data;
 			e->pa = { u1(this->e), u1(this->e) };
 			e->pb = { u1(this->e), u1(this->e) };
 			e->anchor = u3(this->e);
@@ -108,14 +120,14 @@ void lspeman::quickGenerate(Shape shape, int type)
 		break;
 		case CIRCLE:
 		{
-			auto e = (Circle*)shape;
+			auto e = (Circle*)shape.data;
 			e->center = { u1(this->e), u1(this->e) };
 			e->r = u2(this->e);
 		}
 		break;
 		case POLYGEN:
 		{
-			auto e = (Polygen*)shape;
+			auto e = (Polygen*)shape.data;
 			// const size_t n = (int)u2(this->e);
 			vec2 pos(u1(this->e), u1(this->e));
 			vec2 size(u2(this->e), u2(this->e));
@@ -133,7 +145,7 @@ void lspeman::quickGenerate(Shape shape, int type)
 		break;
 		case ELLIPSE:
 		{
-			auto e = (Ellipse*)shape;
+			auto e = (Ellipse*)shape.data;
 			e->center = { u1(this->e), u1(this->e) };
 			e->rx = u2(this->e);
 			e->ry = u2(this->e);
@@ -155,20 +167,20 @@ void lspeman::translate(Shape shape, int type, const vec2 &displacement)
 	{
 		case LINE:
 		{
-			auto e = (Line*)shape;
+			auto e = (Line*)shape.data;
 			e->pa += displacement;
 			e->pb += displacement;
 		}
 		break;
 		case CIRCLE:
 		{
-			auto e = (Circle*)shape;
+			auto e = (Circle*)shape.data;
 			e->center += displacement;
 		}
 		break;
 		case POLYGEN:
 		{
-			auto e = (Polygen*)shape;
+			auto e = (Polygen*)shape.data;
 			for (int i = 0; i < e->vertices.size(); ++i)
 			{
 				e->vertices[i] += displacement;
@@ -178,7 +190,7 @@ void lspeman::translate(Shape shape, int type, const vec2 &displacement)
 		break;
 		case ELLIPSE:
 		{
-			auto e = (Ellipse*)shape;
+			auto e = (Ellipse*)shape.data;
 			e->center += displacement;
 		}
 		break;
@@ -238,7 +250,7 @@ void lspeman::moveObject(int oid, const bbox2 &box,
 
 	auto it = std::find_if(objects.begin(), objects.end(),
 		[oid](const Object *obj) { return oid == obj->index; });
-	if (it == objects.end()) return false;
+	if (it == objects.end()) return;
 
 	bool needMove = tree->moveObject(oid, box, displacement);
 	(*it)->box = { box.lower + displacement, box.upper + displacement };

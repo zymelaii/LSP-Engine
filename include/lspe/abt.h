@@ -66,7 +66,7 @@ struct node
 
 class abtree
 {
-public: friend void abt::traverse(abtree*, fnvisit, void*, int);
+public: friend void abt::traverse(abtree*, abt::fnvisit, void*, int);
 public:
 	abtree();
 	~abtree();

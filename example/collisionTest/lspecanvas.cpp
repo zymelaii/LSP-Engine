@@ -1,6 +1,8 @@
 #include "lspecanvas.h"
 #include "ui_lspecanvas.h"
 
+#include <array>
+
 struct myQueryExtra { int last[2]; Object *obj; void *userdata; };
 myQueryExtra extra = { { -1, -1 }, nullptr, nullptr };
 
@@ -16,7 +18,7 @@ LspeCanvas::LspeCanvas(QWidget *parent) :
     tmRender = new QTimer(this);
     LSPE_ASSERT(tmRender != nullptr);
 
-    connect(tmRender, &QTimer::timeout, this, render);
+    connect(tmRender, &QTimer::timeout, this, &LspeCanvas::render);
 }
 
 LspeCanvas::~LspeCanvas()
@@ -176,7 +178,8 @@ void LspeCanvas::query(Object *obj)
 	-> bool {
 		using namespace lspe::shape;
 
-		char *stype[] = { "Line", "Circle", "Polygen", "Ellipse" };
+		std::array<const char *, 5> stype{"Line", "Circle", "Polygen", "Ellipse"};
+
 		auto e = (myQueryExtra*)extra;
 		auto p = e->obj;
 		auto q = (Object*)(node->userdata);
@@ -224,7 +227,7 @@ void LspeCanvas::query(Object *obj)
 
 			lspe::Collider collider;
 			collider.setTestPair(p->shape, q->shape);
-			collider.bindSupports(supports[p->shape.type], supports[q->shape.type]);
+			collider.bindSupports(supports[static_cast<int>(p->shape.type)], supports[static_cast<int>(q->shape.type)]);
 			collider.bindInitialGenerator(
 				[](lspe::Shape, lspe::Shape, const lspe::vec2&, void *extra)
 				-> lspe::vec2 { return *(lspe::vec2*)extra; }
@@ -240,7 +243,7 @@ void LspeCanvas::query(Object *obj)
 				} else
 				{
 					qDebug() << "Collision Test Results:"
-						<< stype[p->shape.type] << "x" << stype[q->shape.type]
+						<< stype[static_cast<int>(p->shape.type)] << "x" << stype[static_cast<int>(q->shape.type)]
 						<< "[" << p->index << ":" << q->index << "]";
 					e->last[0] = p->index;
 					e->last[1] = q->index;

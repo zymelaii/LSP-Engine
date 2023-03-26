@@ -8,7 +8,7 @@ LspeCanvas::LspeCanvas(QWidget *parent) :
     ui->setupUi(this);
 
     tmRender = new QTimer(this);
-    connect(tmRender, &QTimer::timeout, this, render);
+    connect(tmRender, &QTimer::timeout, this, &LspeCanvas::render);
 }
 
 LspeCanvas::~LspeCanvas()

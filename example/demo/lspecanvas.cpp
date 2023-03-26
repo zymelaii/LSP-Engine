@@ -11,7 +11,7 @@ LspeCanvas::LspeCanvas(QWidget *parent) :
     tmRender = new QTimer(this);
     LSPE_ASSERT(tmRender != nullptr);
 
-    connect(tmRender, &QTimer::timeout, this, render);
+    connect(tmRender, &QTimer::timeout, this, &LspeCanvas::render);
 
     setup();
 }
@@ -65,7 +65,7 @@ void LspeCanvas::paintEvent(QPaintEvent *event)
 
 		if (shouldDrawBBox)
 		{
-			solver.traverse(visit, this, lspe::abt::POSTORDER);
+			solver.traverse(&LspeCanvas::visit, this, lspe::abt::POSTORDER);
 		}
 
 		painter->setRenderHint(QPainter::Antialiasing);
@@ -153,7 +153,7 @@ void LspeCanvas::drawObject(lspe::RigidBody *obj)
 	painter->resetTransform();
 }
 
-bool LspeCanvas::visit(lspe::abt::node *node, void *extra)
+bool LspeCanvas::visit(const lspe::abt::node *node, void *extra)
 {
 	auto p = (LspeCanvas*)extra;
 	lspe::vec2 l = node->box.lower;
@@ -177,19 +177,19 @@ void LspeCanvas::setup()
 
 	id = solver.newCircleBody({ 500, 137 }, 50);
 	body = (lspe::RigidBody*)solver.getUserdata(id);
-	body->applyForce2Center({ 0, 9.8 * body->getMass() }, true);
+	body->applyForce2Center({ 0, 9.8f * body->getMass() }, true);
 	LSPE_DEBUG("CircleBody: Mass = %f kg", body->getMass());
 	LSPE_DEBUG("CircleBody: Inertia = %f kg*m^2", body->getInertia());
 
 	id = solver.newCircleBody({ 300, 400 }, 100);
 	body = (lspe::RigidBody*)solver.getUserdata(id);
-	body->applyForce2Center({ 0, -9.8 * body->getMass() }, true);
+	body->applyForce2Center({ 0, -9.8f * body->getMass() }, true);
 	LSPE_DEBUG("CircleBody: Mass = %f kg", body->getMass());
 	LSPE_DEBUG("CircleBody: Inertia = %f kg*m^2", body->getInertia());
 
 	id = solver.newTriangleBody({ 64, 64 }, { 56, 200 }, { 200, 90 });
 	body = (lspe::RigidBody*)solver.getUserdata(id);
-	body->applyForce2Center({ 0, 9.8 * body->getMass() }, true);
+	body->applyForce2Center({ 0, 9.8f * body->getMass() }, true);
 	body->applyLinearImpulse2Center({ 8 * body->getMass(), 0 }, true);
 	// body->applyAngularImpulse(lspe::Pi * 1e-10, true);
 	LSPE_DEBUG("TriangleBody: Mass = %f kg", body->getMass());
@@ -198,7 +198,7 @@ void LspeCanvas::setup()
 
 	id = solver.newEllipseBody({ 300, 300 }, 100, 30);
 	body = (lspe::RigidBody*)solver.getUserdata(id);
-	body->applyForce2Center({ 0, 9.8 * body->getMass() }, true);
+	body->applyForce2Center({ 0, 9.8f * body->getMass() }, true);
 	body->applyAngularImpulse(lspe::Pi * 1e-10, true);
 	LSPE_DEBUG("EllipseBody: Mass = %f kg", body->getMass());
 	LSPE_DEBUG("EllipseBody: Inertia = %f kg*m^2", body->getInertia());
